@@ -27,7 +27,7 @@ def main():
     rapid_executable_location = '/home/sgeadmin/work/rapid/run/'
     rapid_io_files_location = '/rapid'
     ecmwf_forecast_location = "/rapid/ecmwf"
-    rapid_scripts_location = '/home/sgeadmin/work/scripts/rapid'
+    rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = '8dcc1b34-0e09-4ddc-8356-df4a24e5be87'
     run_rapid_script = os.path.join(rapid_executable_location, 'run_rapid.sh')
