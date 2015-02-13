@@ -11,7 +11,7 @@ import sys
 from tempfile import mkstemp
 from time import sleep
 
-sys.path.append("/home/sgeadmin/work/scripts/rapid")
+sys.path.append("/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws")
 from CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
 
 #------------------------------------------------------------------------------
