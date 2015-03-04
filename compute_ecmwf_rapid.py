@@ -210,7 +210,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
         #run RAPID
         print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
         process = Popen([os.path.join(rapid_io_files_location,'run_rapid.sh').replace("\\","/")], shell=True)
-        sleep(2) #give rapid time to read namelist file
+        sleep(3) #give rapid time to read namelist file
         #release lock
         try:
             os.remove(lock_file_path)
