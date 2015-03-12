@@ -27,7 +27,7 @@ class ERFPDatasetManager():
         """
         watershed = watershed.lower()
         all_info = []
-        basin_name_search = re.compile('Qout_(.+?)_\d+.nc')
+        basin_name_search = re.compile(r'Qout_([a-zA-Z\d_-]+)_[a-zA-Z\d]+.nc')
         basin_files = glob(os.path.join(source_dir,'Qout_*.nc'))
         base_path = os.path.dirname(source_dir)
         base_name = os.path.basename(source_dir)
@@ -108,6 +108,7 @@ class ERFPDatasetManager():
         """
         This function uploads a resource to a dataset if it does not exist
         """
+	print "Uploading file: %s" % dataset_info['file_to_upload']
         #create dataset for each watershed-subbasin combo if needed
         dataset_id = self.create_dataset(dataset_info['watershed'], 
                        dataset_info['subbasin'], 
@@ -132,9 +133,10 @@ class ERFPDatasetManager():
                                                     forecast_date=dataset_info['date_string'],
                                                     description="ECMWF-RAPID Flood Predicition Dataset")
             except Exception,e:
-                print e
+                print "%s Upload Error: %s" % (resource_name, e)
                 pass
-         
+        else:
+            print "Watershed dataset does not exist. Upload skipped."         
     def zip_upload_packages(self):
         """
         This function uploads a resource to a dataset if it does not exist
