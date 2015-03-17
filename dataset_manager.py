@@ -76,7 +76,7 @@ class ERFPDatasetManager():
         # Use the json module to load CKAN's response into a dictionary.
         response_dict = self.dataset_engine.search_datasets(find_dataset_dict)
         
-        if response_dict['success']:
+        if response_dict.get('success'):
             if int(response_dict['result']['count']) > 0:
                 return response_dict['result']['results'][0]['id']
             return None
@@ -120,21 +120,24 @@ class ERFPDatasetManager():
                                                 dataset_info['subbasin'],
                                                 dataset_info['date_string'])
             resource_results = self.dataset_engine.search_resources({'name':resource_name},datset_id=dataset_id)
-            try:
-                if resource_results['result']['count'] <=0:
-                    #upload resources to the dataset
-                    self.dataset_engine.create_resource(dataset_id, 
-                                                    name=resource_name, 
-                                                    file=dataset_info['file_to_upload'],
-                                                    format='tar.gz', 
-                                                    tethys_app="erfp_tool",
-                                                    watershed=dataset_info['watershed'],
-                                                    subbasin=dataset_info['subbasin'],
-                                                    forecast_date=dataset_info['date_string'],
-                                                    description="ECMWF-RAPID Flood Predicition Dataset")
-            except Exception,e:
-                print "%s Upload Error: %s" % (resource_name, e)
-                pass
+            if resource_results:
+                try:
+                    if resource_results['result']['count'] <=0:
+                        #upload resources to the dataset
+                        self.dataset_engine.create_resource(dataset_id, 
+                                                        name=resource_name, 
+                                                        file=dataset_info['file_to_upload'],
+                                                        format='tar.gz', 
+                                                        tethys_app="erfp_tool",
+                                                        watershed=dataset_info['watershed'],
+                                                        subbasin=dataset_info['subbasin'],
+                                                        forecast_date=dataset_info['date_string'],
+                                                        description="ECMWF-RAPID Flood Predicition Dataset")
+                except Exception as e:
+                    print "%s Upload Error: %s %s" % (resource_name, repr(e), e)
+                    pass
+	    else:
+                print "Upload failed"
         else:
             print "Watershed dataset does not exist. Upload skipped."         
     def zip_upload_packages(self):
