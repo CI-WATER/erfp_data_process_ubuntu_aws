@@ -182,9 +182,9 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
         with open(lock_file_path, 'w') as f:
             #wait for other RAPID processes to complete
             #wait_for_rapid_lock(rapid_executable_location)
-            print datetime.now(), "Waiting for lock"
+            print datetime.datetime.now(), "Waiting for lock"
             fcntl.flock(f, fcntl.LOCK_EX)
-            print datetime.now(), "Lock clear, writing"
+            print datetime.datetime.now(), "Lock clear, writing"
 
             #remove link to old RAPID namelist file
             old_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
@@ -211,7 +211,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
             process = Popen([os.path.join(rapid_io_files_location,'run_rapid.sh').replace("\\","/")], shell=True)
             sleep(2) #give rapid time to read namelist file
             #release lock
-            print datetime.now(), "Releasing lock"
+            print datetime.datetime.now(), "Releasing lock"
             fcntl.flock(f, fcntl.LOCK_UN)
             process.communicate()
 
