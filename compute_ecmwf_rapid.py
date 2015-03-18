@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import csv
 import datetime
+import fcntl
 from glob import glob
 import netCDF4 as NET
 import numpy as np
@@ -139,10 +140,6 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
         elif line.strip().startswith('Qout_file'):
             new_file.write('Qout_file          = \'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           'Qout_%s_%s.nc' % (basin_name, ensemble_number)))
-        elif line.strip().startswith('kfac_file'):
-            new_file.write('kfac_file          = \'%s\'\n' % os.path.join(rapid_io_files_location,
-                                                                          watershed,
-                                                                          'kfac.csv'))
         else:
             new_file.write(line)
 
@@ -182,41 +179,41 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
     for namelist_file in file_list:
         basin_name = os.path.basename(namelist_file)[15:-4]
-        #wait for other RAPID processes to complete
-        wait_for_rapid_lock(rapid_executable_location)
-        #create lock
-        file = open(lock_file_path, 'w')
-        file.close()
-        #remove link to old RAPID namelist file
-        old_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
-        try:
-            os.unlink(old_namelist_file)
-            os.remove(old_namelist_file)
-        except OSError:
-            pass
+        with open(lock_file_path, 'w') as f:
+            #wait for other RAPID processes to complete
+            #wait_for_rapid_lock(rapid_executable_location)
+            print datetime.now(), "Waiting for lock"
+            fcntl.flock(f, fcntl.LOCK_EX)
+            print datetime.now(), "Lock clear, writing"
 
-        #change the new RAPID namelist file
-        print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
-        update_namelist_file(namelist_file, rapid_io_files_location,
-                watershed, basin_name, ensemble_number)
+            #remove link to old RAPID namelist file
+            old_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
+            try:
+                os.unlink(old_namelist_file)
+                os.remove(old_namelist_file)
+            except OSError:
+                pass
 
-        #change link to new RAPID namelist file
-        os.symlink(os.path.join(rapid_io_files_location,
-            watershed, 'rapid_namelist_' + basin_name + \
-            '.dat').replace("\\","/"),
-            os.path.join(rapid_executable_location, 'rapid_namelist').replace("\\","/")
-            )
+            #change the new RAPID namelist file
+            print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
+            update_namelist_file(namelist_file, rapid_io_files_location,
+                    watershed, basin_name, ensemble_number)
 
-        #run RAPID
-        print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
-        process = Popen([os.path.join(rapid_io_files_location,'run_rapid.sh').replace("\\","/")], shell=True)
-        sleep(3) #give rapid time to read namelist file
-        #release lock
-        try:
-            os.remove(lock_file_path)
-        except OSError:
-            pass
-        process.communicate()
+            #change link to new RAPID namelist file
+            os.symlink(os.path.join(rapid_io_files_location,
+                watershed, 'rapid_namelist_' + basin_name + \
+                '.dat').replace("\\","/"),
+                os.path.join(rapid_executable_location, 'rapid_namelist').replace("\\","/")
+                )
+
+            #run RAPID
+            print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
+            process = Popen([os.path.join(rapid_io_files_location,'run_rapid.sh').replace("\\","/")], shell=True)
+            sleep(2) #give rapid time to read namelist file
+            #release lock
+            print datetime.now(), "Releasing lock"
+            fcntl.flock(f, fcntl.LOCK_UN)
+            process.communicate()
 
 def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
     """
