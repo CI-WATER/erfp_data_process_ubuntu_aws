@@ -24,7 +24,7 @@ def main():
     date_string = time_begin_all.strftime('%Y%m%d')
     #date_string = datetime.datetime(2015,2,3).strftime('%Y%m%d')
 
-    rapid_executable_location = '/home/sgeadmin/work/rapid/run/'
+    rapid_executable_location = '/home/sgeadmin/work/rapid/src/rapid'
     rapid_io_files_location = '/rapid'
     ecmwf_forecast_location = "/rapid/ecmwf"
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'

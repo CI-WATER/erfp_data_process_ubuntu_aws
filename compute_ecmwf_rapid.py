@@ -10,7 +10,6 @@ from shutil import move
 from subprocess import Popen
 import sys
 from tempfile import mkstemp
-from time import sleep
 
 sys.path.append("/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws")
 from CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
@@ -152,19 +151,6 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     #Move new file
     move(abs_path, namelist_file)
 
-def wait_for_rapid_lock(rapid_executable_location):
-    """
-    wait for lock file to be deleted or if it takes too long go ahead anyway
-    """
-    wait = True
-    time_start = datetime.datetime.utcnow()
-    while wait:
-        found = False
-        if os.path.exists(os.path.join(rapid_executable_location, "rapid.lock")):
-            sleep(1)
-            found = True
-        wait = found and (datetime.datetime.utcnow() - time_start) < datetime.timedelta(0, 5*60)
-
 def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
                                rapid_io_files_location):
     """
@@ -172,48 +158,31 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
     """
     forecast_split = os.path.basename(forecast).split(".")
     ensemble_number = int(forecast_split[2])
-
     input_directory = os.path.join(rapid_io_files_location, watershed)
-    lock_file_path = os.path.join(rapid_executable_location,'rapid.lock')
+    #create link to RAPID
+    os.symlink(rapid_executable_location, 'rapid')
+
     #loop through all the rapid_namelist files in directory
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
     for namelist_file in file_list:
         basin_name = os.path.basename(namelist_file)[15:-4]
-        with open(lock_file_path, 'w') as f:
-            #wait for other RAPID processes to complete
-            #wait_for_rapid_lock(rapid_executable_location)
-            print datetime.datetime.now(), "Waiting for lock"
-            fcntl.flock(f, fcntl.LOCK_EX)
-            print datetime.datetime.now(), "Lock clear, writing"
-
-            #remove link to old RAPID namelist file
-            old_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
-            try:
-                os.unlink(old_namelist_file)
-                os.remove(old_namelist_file)
-            except OSError:
-                pass
-
-            #change the new RAPID namelist file
-            print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
-            update_namelist_file(namelist_file, rapid_io_files_location,
-                    watershed, basin_name, ensemble_number)
-
-            #change link to new RAPID namelist file
-            os.symlink(os.path.join(rapid_io_files_location,
-                watershed, 'rapid_namelist_' + basin_name + \
-                '.dat').replace("\\","/"),
-                os.path.join(rapid_executable_location, 'rapid_namelist').replace("\\","/")
-                )
-
-            #run RAPID
-            print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
-            process = Popen([os.path.join(rapid_io_files_location,'run_rapid.sh').replace("\\","/")], shell=True)
-            sleep(2) #give rapid time to read namelist file
-            #release lock
-            print datetime.datetime.now(), "Releasing lock"
-            fcntl.flock(f, fcntl.LOCK_UN)
-            process.communicate()
+        #change the new RAPID namelist file
+        print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
+        update_namelist_file(namelist_file, rapid_io_files_location,
+                watershed, basin_name, ensemble_number)
+        #remove link to old RAPID namelist file
+        rapid_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
+        try:
+            os.unlink(rapid_namelist_file)
+            os.remove(rapid_namelist_file)
+        except OSError:
+            pass
+        #change link to new RAPID namelist file
+        os.symlink(namelist_file,rapid_namelist_file)
+        #run RAPID
+        print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
+        process = Popen(['rapid'], shell=True)
+        process.communicate()
 
 def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
     """
