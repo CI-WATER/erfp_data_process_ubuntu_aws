@@ -24,13 +24,12 @@ def main():
     date_string = time_begin_all.strftime('%Y%m%d')
     #date_string = datetime.datetime(2015,2,3).strftime('%Y%m%d')
 
-    rapid_executable_location = '/home/sgeadmin/work/rapid/run/'
+    rapid_executable_location = '/home/sgeadmin/work/rapid/src/rapid'
     rapid_io_files_location = '/rapid'
     ecmwf_forecast_location = "/rapid/ecmwf"
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = '8dcc1b34-0e09-4ddc-8356-df4a24e5be87'
-    run_rapid_script = os.path.join(rapid_executable_location, 'run_rapid.sh')
     cluster_name = "rapid"
     node_image_id = "ami-b4ab14c3"
     num_nodes_per_watershed = 26
@@ -127,7 +126,7 @@ def main():
         #create job to downscale forecasts for watershed
         job = CJob('job_%s_%s' % (forecast_date_timestep, iteration), tmplt.vanilla_transfer_files)
         job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
-        job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, run_rapid_script))
+        job.set('transfer_input_files', "%s, %s" % (forecast, master_watershed_input_directory))
         job.set('initialdir',condor_init_dir)
         job.set('arguments', '%s %s %s %s' % (forecast, watershed, weight_table_file, rapid_executable_location))
         job.set('transfer_output_remaps',"\"%s\"" % (transfer_output_remaps[:-1]))
