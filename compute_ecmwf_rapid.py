@@ -152,15 +152,17 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     move(abs_path, namelist_file)
 
 def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
-                               rapid_io_files_location):
+                               node_path):
     """
     run RAPID on single watershed after ECMWF prepared
     """
     forecast_split = os.path.basename(forecast).split(".")
     ensemble_number = int(forecast_split[2])
-    input_directory = os.path.join(rapid_io_files_location, watershed)
+    input_directory = os.path.join(node_path, watershed)
+    rapid_namelist_file = os.path.join(node_path,'rapid_namelist')
+    local_rapid_executable = os.path.join(node_path,'rapid')
     #create link to RAPID
-    os.symlink(rapid_executable_location, 'rapid')
+    os.symlink(rapid_executable_location, local_rapid_executable)
 
     #loop through all the rapid_namelist files in directory
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
@@ -168,10 +170,9 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
         basin_name = os.path.basename(namelist_file)[15:-4]
         #change the new RAPID namelist file
         print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
-        update_namelist_file(namelist_file, rapid_io_files_location,
+        update_namelist_file(namelist_file, node_path,
                 watershed, basin_name, ensemble_number)
         #remove link to old RAPID namelist file
-        rapid_namelist_file = os.path.join(rapid_executable_location,'rapid_namelist')
         try:
             os.unlink(rapid_namelist_file)
             os.remove(rapid_namelist_file)
@@ -181,8 +182,20 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
         os.symlink(namelist_file,rapid_namelist_file)
         #run RAPID
         print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
-        process = Popen(['rapid'], shell=True)
+        process = Popen([local_rapid_executable], shell=True)
         process.communicate()
+    #remove rapid link
+    try:
+        os.unlink(local_rapid_executable)
+        os.remove(local_rapid_executable)
+    except OSError:
+        pass
+    #remove namelist link
+    try:
+        os.unlink(rapid_namelist_file)
+        os.remove(rapid_namelist_file)
+    except OSError:
+        pass
 
 def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
     """
@@ -221,13 +234,6 @@ def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_e
             os.remove(inflow_file_name)
         except OSError:
             pass
-        #remove RAPID log files
-        rapid_output_files=glob(os.path.join(rapid_executable_location,'*_rapid_stdout.txt'))
-        for rapid_output_file in rapid_output_files:
-            try:
-                os.remove(rapid_output_file)
-            except OSError:
-                pass
         time_stop_all = datetime.datetime.utcnow()
 
     except Exception as ex:
