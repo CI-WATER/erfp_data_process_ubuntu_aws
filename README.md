@@ -83,6 +83,7 @@ You only need to run rapid_process.sh
 ./rapid_process.sh
 ```
 You can use *create_cron.py* to create the CRON jobs.
+
 1. Install crontab Python package.
 ```
 pip install crontab
