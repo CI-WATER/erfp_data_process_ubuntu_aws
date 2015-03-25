@@ -38,13 +38,13 @@ $ git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
 ##Step 5: Create folders for RAPID input and for downloading ECMWF
 In this instance:
 ```
-cd /mnt/sgeadmin/
-mkdir rapid ecmwf logs condor
-mkdir rapid/input
+$ cd /mnt/sgeadmin/
+$ mkdir rapid ecmwf logs condor
+$ mkdir rapid/input
 ```
 ##Step 6: Change the locations in the files
 Go into *rapid_process_async_ubuntu.py* and change these variables for your instance:
-```
+```python
     rapid_executable_location = '/home/sgeadmin/work/rapid/src/rapid'
     rapid_io_files_location = '/mnt/sgeadmin/rapid'
     ecmwf_forecast_location = "/mnt/sgeadmin/ecmwf"
@@ -57,8 +57,8 @@ Go into *rapid_process.sh* and change make sure the path locations and variables
 
 Example:
 ```
-chmod 554 rapid_process_async_ubuntu.py
-chmod 554 rapid_process.sh
+$ chmod 554 rapid_process_async_ubuntu.py
+$ chmod 554 rapid_process.sh
 ```
 ##Step 8: Add RAPID files to the work/rapid/input directory
 Example:
@@ -80,20 +80,20 @@ See: http://askubuntu.com/questions/2368/how-do-i-set-up-a-cron-job
 
 You only need to run rapid_process.sh
 ```
-./rapid_process.sh
+$ ./rapid_process.sh
 ```
 You can use *create_cron.py* to create the CRON jobs.
 
 1) Install crontab Python package.
 ```
-pip install crontab
+$ pip install crontab
 ```
 2) Modify location of script
-```
+```python
 cron_command = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws/rapid_process.sh' 
 ```
 3) Change execution times to suit your needs
-```
+```python
 cron_job_morning.minute.on(30)
 cron_job_morning.hour.on(9)
 ...
