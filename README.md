@@ -39,15 +39,15 @@ $ git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
 In this instance:
 ```
 cd /mnt/sgeadmin/
+mkdir rapid ecmwf logs condor
 mkdir rapid/input
-mkdir ecmwf
 ```
 ##Step 6: Change the locations in the files
 Go into *rapid_process_async_ubuntu.py* and change these variables for your instance:
 ```
     rapid_executable_location = '/home/sgeadmin/work/rapid/src/rapid'
-    rapid_io_files_location = '/rapid'
-    ecmwf_forecast_location = "/rapid/ecmwf"
+    rapid_io_files_location = '/mnt/sgeadmin/rapid'
+    ecmwf_forecast_location = "/mnt/sgeadmin/ecmwf"
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = 'your-ckan-api-key'
