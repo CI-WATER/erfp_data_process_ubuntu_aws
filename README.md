@@ -82,4 +82,21 @@ You only need to run rapid_process.sh
 ```
 ./rapid_process.sh
 ```
+You can use *create_cron.py* to create the CRON jobs.
+1) Install crontab Python package.
+```
+pip install crontab
+```
+2) Modify location of script
+```
+cron_command = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws/rapid_process.sh' 
+```
+3) Change execution times to suit your needs
+```
+cron_job_morning.minute.on(30)
+cron_job_morning.hour.on(9)
+...
+cron_job_evening.minute.on(30)
+cron_job_evening.hour.on(21)
+```
 
