@@ -26,9 +26,9 @@ $ pip install netCDF4
 ```
 ##Step 3: Install Other Python Libraries
 ```
-pip install requests_toolbelt
-pip install tethys_dataset_services
-pip install condorpy
+$ pip install requests_toolbelt
+$ pip install tethys_dataset_services
+$ pip install condorpy
 ```
 ##Step 4: Download the source code
 ```
