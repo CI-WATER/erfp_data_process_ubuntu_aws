@@ -33,8 +33,11 @@ def main():
     cluster_name = "rapid"
     node_image_id = "ami-b4ab14c3"
     num_nodes_per_watershed = 26
+
     #get list of watersheds in rapid directory
-    watersheds = os.listdir(os.path.join(rapid_io_files_location,'input'))
+    watersheds = [d for d in os.listdir(os.path.join(rapid_io_files_location,'input')) \
+                if os.path.isdir(os.path.join(rapid_io_files_location,'input', d))]
+
     condor_init_dir = "/mnt/sgeadmin/condor/%s" % date_string
     try:
         os.makedirs(condor_init_dir)
