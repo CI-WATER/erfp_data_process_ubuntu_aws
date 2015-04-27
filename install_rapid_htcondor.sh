@@ -1,6 +1,6 @@
 
 #*******************************************************************************
-#rapid_script.sh
+#install_rapid_htcondor.sh
 #*******************************************************************************
 
 #Purpose:
@@ -71,9 +71,20 @@ cd rapid/src/
 make rapid
 
 #install HTCONDOR
-apt-get install libvirt0 libdate-manip-perl
+apt-get install -y libvirt0 libdate-manip-perl vim
 wget http://ciwckan.chpc.utah.edu/dataset/be272798-f2a7-4b27-9dc8-4a131f0bb3f0/resource/86aa16c9-0575-44f7-a143-a050cd72f4c8/download/condor8.2.8312769ubuntu14.04amd64.deb
 dpkg -i condor8.2.8312769ubuntu14.04amd64.deb
 echo CONDOR_HOST = 10.8.123.71 >> /etc/condor/condor_config.local
 echo DAEMON_LIST = MASTER, SCHEDD, STARTD >> /etc/condor/condor_config.local
-condor_master
+echo ALLOW_ADMINISTRATOR = \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_OWNER = \$\(FULL_HOSTNAME\), \$\(ALLOW_ADMINISTRATOR\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_READ = \$\(FULL_HOSTNAME\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_WRITE = \$\(FULL_HOSTNAME\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo START = True >> /etc/condor/condor_config.local
+echo SUSPEND = False >> /etc/condor/condor_config.local
+echo CONTINUE = True >> /etc/condor/condor_config.local
+echo PREEMPT = False >> /etc/condor/condor_config.local
+echo KILL = False >> /etc/condor/condor_config.local
+echo WANT_SUSPEND = False >> /etc/condor/condor_config.local
+echo WANT_VACATE = False >> /etc/condor/condor_config.local
+. /etc/init.d/condor start
