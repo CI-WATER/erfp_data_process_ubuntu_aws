@@ -13,7 +13,6 @@ from tempfile import mkstemp
 
 sys.path.append("/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws")
 from CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
-
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
@@ -106,38 +105,38 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
             else:
                 new_file.write('BS_opt_Qinit       =.false.\n')
         elif line.strip().startswith('Vlat_file'):
-            new_file.write('Vlat_file          = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('Vlat_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                          'm3_riv_bas_%s.nc' % ensemble_number))
         elif line.strip().startswith('ZS_TauM'):
-            new_file.write('ZS_TauM            = ' + str(duration) + '\n')
+            new_file.write('ZS_TauM            =%s\n' % duration)
         elif line.strip().startswith('ZS_dtM'):
-            new_file.write('ZS_dtM             = ' + str(86400) + '\n')
+            new_file.write('ZS_dtM             =%s\n' % 86400)
         elif line.strip().startswith('ZS_TauR'):
-            new_file.write('ZS_TauR            = ' + str(interval) + '\n')
+            new_file.write('ZS_TauR            =%s\n' % interval)
         elif line.strip().startswith('Qinit_file'):
             if (init_flow):
-                new_file.write('Qinit_file         = \'%s\'\n' % os.path.join(rapid_io_files_location,
+                new_file.write('Qinit_file         =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           'Qinit_file_%s.csv' % basin_name))
             else:
-                new_file.write('Qinit_file         = \'\'\n')
+                new_file.write('Qinit_file         =\'\'\n')
         elif line.strip().startswith('rapid_connect_file'):
-            new_file.write('rapid_connect_file = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('rapid_connect_file =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           watershed,
                                                                           'rapid_connect.csv'))
         elif line.strip().startswith('riv_bas_id_file'):
-            new_file.write('riv_bas_id_file    = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('riv_bas_id_file    =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           watershed,
                                                                           'riv_bas_id_%s.csv' % basin_name))
         elif line.strip().startswith('k_file'):
-            new_file.write('k_file             = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('k_file             =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           watershed,
                                                                           'k.csv'))
         elif line.strip().startswith('x_file'):
-            new_file.write('x_file             = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('x_file             =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           watershed,
                                                                           'x.csv'))
         elif line.strip().startswith('Qout_file'):
-            new_file.write('Qout_file          = \'%s\'\n' % os.path.join(rapid_io_files_location,
+            new_file.write('Qout_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                           'Qout_%s_%s.nc' % (basin_name, ensemble_number)))
         else:
             new_file.write(line)

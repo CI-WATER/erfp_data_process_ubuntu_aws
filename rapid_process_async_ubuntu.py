@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+from condorpy import Job as CJob
+from condorpy import Templates as tmplt
+from condorpy import Node, DAG
 import datetime
 from glob import glob
 import itertools
@@ -7,19 +10,26 @@ import os
 from shutil import rmtree
 import subprocess
 
-from condorpy import Job as CJob
-from condorpy import Templates as tmplt
-from condorpy import Node, DAG
-
+#local imports
 import ftp_ecmwf_download
-from dataset_manager import ERFPDatasetManager
+from sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
+
+#----------------------------------------------------------------------------------------
+# FUNCTIONS
+#----------------------------------------------------------------------------------------
 def get_node_names(start_index, num_nodes):
+    """
+    This function generates names of the nodes to add to the cluster
+    """
     node_names = ""
     for i in range(start_index, start_index+num_nodes):
         node_names += "node%s," %i
     return node_names[:-1]
 
 def main():
+    """
+    This it the main process
+    """
     time_begin_all = datetime.datetime.utcnow()
     date_string = time_begin_all.strftime('%Y%m%d')
     #date_string = datetime.datetime(2015,2,3).strftime('%Y%m%d')
@@ -30,6 +40,7 @@ def main():
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = '8dcc1b34-0e09-4ddc-8356-df4a24e5be87'
+    app_instance_id = '53ab91374b7155b0a64f0efcd706854e'
     cluster_name = "rapid"
     node_image_id = "ami-b4ab14c3"
     num_nodes_per_watershed = 26
@@ -146,10 +157,9 @@ def main():
     time_finish_prepare = datetime.datetime.utcnow()
 
     #upload the files to the data store
-    data_manager = ERFPDatasetManager(data_store_url,
-                                   data_store_api_key,
-                                   os.path.join(rapid_io_files_location, 'output'))
-    data_manager.zip_upload_packages()
+    data_manager = ECMWFRAPIDDatasetManager(data_store_url,
+                                   data_store_api_key)
+    data_manager.zip_upload_resources(os.path.join(rapid_io_files_location, 'output'))
     #delete local datasets
     for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
         rmtree(os.path.join(rapid_io_files_location, 'output', item))
