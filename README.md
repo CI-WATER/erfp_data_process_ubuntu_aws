@@ -89,7 +89,7 @@ You can use *create_cron.py* to create the CRON jobs.
 
 1) Install crontab Python package.
 ```
-$ pip install crontab
+$ pip install python-crontab
 ```
 2) Modify location of script
 ```python
