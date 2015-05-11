@@ -34,6 +34,8 @@ $ pip install condorpy
 ```
 $ cd /path/to/your/scripts/
 $ git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
+$ git submodule init
+$ git submodule update
 ```
 ##Step 5: Create folders for RAPID input and for downloading ECMWF
 In this instance:
@@ -51,6 +53,7 @@ Go into *rapid_process_async_ubuntu.py* and change these variables for your inst
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = 'your-ckan-api-key'
+    condor_init_dir = "/mnt/sgeadmin/condor/%s" % date_string
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
 ##Step 7: Make sure permissions are correct for these files and any directories the script will use
