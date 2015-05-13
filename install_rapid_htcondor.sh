@@ -29,6 +29,7 @@ cd /home/$NAME/
 mkdir condor ecmwf logs scripts rapid rapid/input rapid/output
 cd scripts
 git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
+cd erfp_data_process_ubuntu_aws
 git submodule init
 git submodule update
 #install RAPID prereqs
