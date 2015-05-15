@@ -77,6 +77,8 @@ make rapid
 apt-get install -y libvirt0 libdate-manip-perl vim
 wget http://ciwckan.chpc.utah.edu/dataset/be272798-f2a7-4b27-9dc8-4a131f0bb3f0/resource/86aa16c9-0575-44f7-a143-a050cd72f4c8/download/condor8.2.8312769ubuntu14.04amd64.deb
 dpkg -i condor8.2.8312769ubuntu14.04amd64.deb
+#use this if master node and comment out following two lines
+#echo CONDOR_HOST = \$\(IP_ADDRESS\)
 echo CONDOR_HOST = 10.8.123.71 >> /etc/condor/condor_config.local
 echo DAEMON_LIST = MASTER, SCHEDD, STARTD >> /etc/condor/condor_config.local
 echo ALLOW_ADMINISTRATOR = \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
@@ -91,3 +93,5 @@ echo KILL = False >> /etc/condor/condor_config.local
 echo WANT_SUSPEND = False >> /etc/condor/condor_config.local
 echo WANT_VACATE = False >> /etc/condor/condor_config.local
 . /etc/init.d/condor start
+#NOTE: if you forgot to change lines for master node, change CONDOR_HOST = $(IP_ADDRESS)
+# and run $ . /etc/init.d/condor restart as ROOT
