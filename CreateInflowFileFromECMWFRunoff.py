@@ -175,7 +175,9 @@ class CreateInflowFileFromECMWFRunoff(object):
             npoints = int(dict_list[self.header_wt[4]][pointer])
             # Check if all npoints points correspond to the same streamID
             if len(set(dict_list[self.header_wt[0]][pointer : (pointer + npoints)])) != 1:
-                  raise Exception(self.errorMessages[2])
+                print "ROW INDEX", pointer
+                print "COMID", dict_list[self.header_wt[0]][pointer]
+                raise Exception(self.errorMessages[2])
 
             area_sqm_npoints = [float(k) for k in dict_list[self.header_wt[1]][pointer : (pointer + npoints)]]
             area_sqm_npoints = NUM.array(area_sqm_npoints)
