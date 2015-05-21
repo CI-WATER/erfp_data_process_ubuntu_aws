@@ -12,7 +12,8 @@ import subprocess
 
 #local imports
 import ftp_ecmwf_download
-from sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
+from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
+                                                  RAPIDInputDatasetManager)
 
 #----------------------------------------------------------------------------------------
 # FUNCTIONS
@@ -38,22 +39,38 @@ def main():
     rapid_io_files_location = '/rapid'
     ecmwf_forecast_location = "/rapid/ecmwf"
     rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
+    condor_directory = '/mnt/sgeadmin/condor/'
     data_store_url = 'http://ciwckan.chpc.utah.edu'
     data_store_api_key = '8dcc1b34-0e09-4ddc-8356-df4a24e5be87'
     app_instance_id = '53ab91374b7155b0a64f0efcd706854e'
+    sync_with_ckan = True
+    download_ecmwf = True
+    upload_to_ckan = True
+
+    """
     cluster_name = "rapid"
     node_image_id = "ami-b4ab14c3"
     num_nodes_per_watershed = 26
+    """
+    if sync_with_ckan and app_instance_id and data_store_url and data_store_api_key:
+        #sync with data store
+        ri_manager = RAPIDInputDatasetManager(data_store_url,
+                                              data_store_api_key,
+                                              'ecmwf',
+                                              app_instance_id)
+        ri_manager.sync_dataset(os.path.join(rapid_io_files_location,'input'))
+
+    #initialize HTCondor Directory
+    condor_init_dir = os.path.join(condor_directory, date_string)
+    try:
+        os.makedirs(condor_init_dir)
+    except OSError:
+        pass
 
     #get list of watersheds in rapid directory
     watersheds = [d for d in os.listdir(os.path.join(rapid_io_files_location,'input')) \
                 if os.path.isdir(os.path.join(rapid_io_files_location,'input', d))]
 
-    condor_init_dir = "/mnt/sgeadmin/condor/%s" % date_string
-    try:
-        os.makedirs(condor_init_dir)
-    except OSError:
-        pass
 
     """
     #add nodes to cluster
@@ -67,14 +84,15 @@ def main():
 
         add_large_node_process = subprocess.Popen(add_large_node_args)
         print "Adding %s c3.large node(s) to the cluster..." % num_add_large_nodes
-    #download all files for today
     """
-
-    ecmwf_folders = ftp_ecmwf_download.download_all_ftp(ecmwf_forecast_location,
-       'Runoff.%s*.netcdf.tar.gz' % date_string)
+    if download_ecmwf:
+        #download all files for today
+        ecmwf_folders = ftp_ecmwf_download.download_all_ftp(ecmwf_forecast_location,
+           'Runoff.%s*.netcdf.tar.gz' % date_string)
+    else:
+        ecmwf_folders = glob(os.path.join(ecmwf_forecast_location,
+            'Runoff.'+date_string+'*.netcdf'))
     """
-    ecmwf_folders = glob(os.path.join(ecmwf_forecast_location,
-        'Runoff.'+date_string+'*.netcdf'))
     #continue adding nodes
     #c3.xlarge (4)
     num_add_xlarge_nodes = min(4, int(ceil((tot_num_nodes-num_add_large_nodes*2)/4)))
@@ -138,7 +156,7 @@ def main():
             weight_table_file = 'weight_high_res.csv'
 
         #create job to downscale forecasts for watershed
-        job = CJob('job_%s_%s' % (forecast_date_timestep, iteration), tmplt.vanilla_transfer_files)
+        job = CJob('job_%s_%s_%s' % (forecast_date_timestep, watershed, iteration), tmplt.vanilla_transfer_files)
         job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
         job.set('transfer_input_files', "%s, %s" % (forecast, master_watershed_input_directory))
         job.set('initialdir',condor_init_dir)
@@ -150,19 +168,18 @@ def main():
 
     #wait for jobs to finish
     for job in job_list:
-        #job_handle = subprocess.Popen(['condor_wait', os.path.join(condor_init_dir, job.log_file)])
-        #job_handle.communicate()
         job.wait()
 
     time_finish_prepare = datetime.datetime.utcnow()
 
-    #upload the files to the data store
-    data_manager = ECMWFRAPIDDatasetManager(data_store_url,
-                                   data_store_api_key)
-    data_manager.zip_upload_resources(os.path.join(rapid_io_files_location, 'output'))
-    #delete local datasets
-    for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
-        rmtree(os.path.join(rapid_io_files_location, 'output', item))
+    if upload_to_ckan and app_instance_id and data_store_url and data_store_api_key:
+        #upload the files to the data store
+        data_manager = ECMWFRAPIDDatasetManager(data_store_url,
+                                       data_store_api_key)
+        data_manager.zip_upload_resources(os.path.join(rapid_io_files_location, 'output'))
+        #delete local datasets
+        for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
+            rmtree(os.path.join(rapid_io_files_location, 'output', item))
     """
     #remove all nodes
     subprocess.Popen(["starcluster","-r","eu-west-1","removenode","-n",
