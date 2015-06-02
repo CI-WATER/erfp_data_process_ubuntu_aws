@@ -9,11 +9,9 @@ import os
 from shutil import move
 from subprocess import Popen
 import sys
-import tarfile
 from tempfile import mkstemp
 
 from erfp_data_process_ubuntu_aws.CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
-from erfp_data_process_ubuntu_aws.sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
@@ -151,8 +149,8 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     #Move new file
     move(abs_path, namelist_file)
 
-def run_RAPID_upload_single_watershed(forecast, watershed, rapid_executable_location,
-                               node_path, data_store_url, data_store_api_key):
+def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
+                               node_path):
     """
     run RAPID on single watershed after ECMWF prepared
     """
@@ -164,9 +162,6 @@ def run_RAPID_upload_single_watershed(forecast, watershed, rapid_executable_loca
     local_rapid_executable = os.path.join(node_path,'rapid')
     #create link to RAPID
     os.symlink(rapid_executable_location, local_rapid_executable)
-    #initialize data manager
-    data_manager = ECMWFRAPIDDatasetManager(data_store_url,
-                                            data_store_api_key)
 
     #loop through all the rapid_namelist files in directory
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
@@ -193,23 +188,6 @@ def run_RAPID_upload_single_watershed(forecast, watershed, rapid_executable_loca
 
         time_stop_rapid = datetime.datetime.utcnow()
         print "Time to run RAPID:",(time_stop_rapid-time_start_rapid)
-
-        time_start_upload = datetime.datetime.utcnow()
-
-        #Upload to CKAN
-        data_manager.initialize_run_ecmwf(watershed, basin_name, forecast_date_timestep)
-        data_manager.update_resource_ensemble_number(ensemble_number)
-        #tar.gz file
-        output_tar_file =  os.path.join(node_path, "%s.tar.gz" % data_manager.resource_name)
-        outflow_file = os.path.join(node_path, 'Qout_%s_%s.nc' % (basin_name, ensemble_number))
-        if not os.path.exists(output_tar_file):
-            with tarfile.open(output_tar_file, "w:gz") as tar:
-                tar.add(outflow_file, arcname=os.path.basename(outflow_file))
-        #upload file
-        data_manager.upload_resource(output_tar_file, overwrite=True)
-
-        time_stop_upload = datetime.datetime.utcnow()
-        print "Time to upload:", (time_stop_upload-time_start_upload)
 
     #remove rapid link
     try:
@@ -249,8 +227,7 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
             in_weight_table_node_location, inflow_file_name)
         time_finish_ecmwf = datetime.datetime.utcnow()
         print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
-        run_RAPID_upload_single_watershed(forecast_basename, watershed, rapid_executable_location,
-                                   node_path, data_store_url, data_store_api_key)
+        run_RAPID_single_watershed(forecast_basename, watershed, rapid_executable_location, node_path)
         #CLEAN UP
         print "Cleaning up"
         #remove inflow file
@@ -262,10 +239,10 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
 
     except Exception as ex:
         print ex
-        print "Skipping ECMWF downscaling for: %s %s %s ..." % (watershed, forecast_date_timestep,
+        print "Skipping ECMWF-RAPID downscaling for: %s %s %s ..." % (watershed, forecast_date_timestep,
                                                                           ensemble_number)
         return False
-    print "Total time to compute and upload: %s" % (time_stop_all-time_start_all)
+    print "Total time to compute: %s" % (time_stop_all-time_start_all)
 
 if __name__ == "__main__":   
     process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
