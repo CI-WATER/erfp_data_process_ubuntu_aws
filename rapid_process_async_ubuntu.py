@@ -101,7 +101,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
         job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
         job.set('initialdir',condor_init_dir)
-        job.set('arguments', '%s %s %s %s %s %s' % (forecast, watershed, weight_table_file, rapid_executable_location))
+        job.set('arguments', '%s %s %s %s' % (forecast, watershed, weight_table_file, rapid_executable_location))
         job.set('transfer_output_remaps',"\"%s\"" % (transfer_output_remaps[:-1]))
         job.submit()
         job_list.append(job)

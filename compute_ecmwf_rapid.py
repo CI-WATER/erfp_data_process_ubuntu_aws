@@ -149,8 +149,7 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     #Move new file
     move(abs_path, namelist_file)
 
-def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
-                               node_path):
+def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, node_path):
     """
     run RAPID on single watershed after ECMWF prepared
     """
@@ -202,8 +201,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
     except OSError:
         pass
 
-def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location,
-                             data_store_url, data_store_api_key):
+def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
     """
     prepare all ECMWF files for rapid
     """
@@ -245,4 +243,4 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
     print "Total time to compute: %s" % (time_stop_all-time_start_all)
 
 if __name__ == "__main__":   
-    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4])
