@@ -137,6 +137,8 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                         tar.add(outflow_file, arcname=os.path.basename(outflow_file))
                 #upload file
                 data_manager.upload_resource(output_tar_file, overwrite=True)
+                #remove tar.gz file
+                os.remove(output_tar_file)
 
     time_finish_prepare = datetime.datetime.utcnow()
 
