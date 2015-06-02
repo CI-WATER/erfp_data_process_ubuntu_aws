@@ -12,8 +12,8 @@ import sys
 import tarfile
 from tempfile import mkstemp
 
-from CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
-from sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
+from erfp_data_process_ubuntu_aws.CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
+from erfp_data_process_ubuntu_aws.sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ def run_RAPID_upload_single_watershed(forecast, watershed, rapid_executable_loca
         #change the new RAPID namelist file
         print "Updating namelist file for:", basin_name, ensemble_number
         update_namelist_file(namelist_file, node_path,
-                watershed, basin_name, ensemble_number)
+                             watershed, basin_name, ensemble_number)
         #remove link to old RAPID namelist file
         try:
             os.unlink(rapid_namelist_file)
