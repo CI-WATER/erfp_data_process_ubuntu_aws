@@ -47,13 +47,23 @@ $ mkdir rapid/input
 ##Step 6: Change the locations in the files
 Go into *rapid_process_async_ubuntu.py* and change these variables for your instance:
 ```python
-    rapid_executable_location = '/home/sgeadmin/work/rapid/src/rapid'
-    rapid_io_files_location = '/mnt/sgeadmin/rapid'
-    ecmwf_forecast_location = "/mnt/sgeadmin/ecmwf"
-    rapid_scripts_location = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws'
-    data_store_url = 'http://ciwckan.chpc.utah.edu'
-    data_store_api_key = 'your-ckan-api-key'
-    condor_init_dir = "/mnt/sgeadmin/condor/%s" % date_string
+#------------------------------------------------------------------------------
+#main process
+#------------------------------------------------------------------------------
+if __name__ == "__main__":
+    run_ecmwf_rapid_process(
+        rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
+        rapid_io_files_location='/home/cecsr/rapid',
+        ecmwf_forecast_location ="/home/cecsr/ecmwf",
+        rapid_scripts_location='/home/cecsr/scripts/erfp_data_process_ubuntu_aws',
+        condor_directory='/home/cecsr/condor/',
+        data_store_url='http://ciwckan.chpc.utah.edu',
+        data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
+        app_instance_id='53ab91374b7155b0a64f0efcd706854e',
+        sync_with_ckan=False,
+        download_ecmwf=False,
+        upload_to_ckan=True
+    )
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
 
