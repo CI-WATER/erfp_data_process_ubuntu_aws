@@ -125,7 +125,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         if upload_to_ckan and data_store_url and data_store_api_key:
             job_info = job_info_list[index]
             print "Uploading", job_info['watershed'], job_info['forecast_date_timestep'], job_info['ensemble_number']
-            for outflow_file in outflow_file_name_list:
+            for outflow_file in job_info['outflow_file_name_list']:
                 basin_name = subbasin_name_search.search(os.path.basename(outflow_file)).group(1)
                 #Upload to CKAN
                 data_manager.initialize_run_ecmwf(job_info['watershed'], basin_name, job_info['forecast_date_timestep'])
