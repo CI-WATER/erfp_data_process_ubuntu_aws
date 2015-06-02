@@ -9,10 +9,11 @@ import os
 from shutil import move
 from subprocess import Popen
 import sys
+import tarfile
 from tempfile import mkstemp
 
-sys.path.append("/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws")
 from CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
+from sfpt_dataset_manager.dataset_manager import ECMWFRAPIDDatasetManager
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
@@ -79,7 +80,7 @@ def compute_initial_rapid_flows(basin_ensemble_files, basin_name, input_director
 
 
 def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basin_name,
-                ensemble_number, init_flow = False):
+                         ensemble_number, init_flow = False):
     """
     Update RAPID namelist file with new inflow file and output location
     """
@@ -150,25 +151,31 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     #Move new file
     move(abs_path, namelist_file)
 
-def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
-                               node_path):
+def run_RAPID_upload_single_watershed(forecast, watershed, rapid_executable_location,
+                               node_path, data_store_url, data_store_api_key):
     """
     run RAPID on single watershed after ECMWF prepared
     """
     forecast_split = os.path.basename(forecast).split(".")
     ensemble_number = int(forecast_split[2])
+    forecast_date_timestep = ".".join(forecast_split[:2])
     input_directory = os.path.join(node_path, watershed)
     rapid_namelist_file = os.path.join(node_path,'rapid_namelist')
     local_rapid_executable = os.path.join(node_path,'rapid')
     #create link to RAPID
     os.symlink(rapid_executable_location, local_rapid_executable)
+    #initialize data manager
+    data_manager = ECMWFRAPIDDatasetManager(data_store_url,
+                                            data_store_api_key)
 
     #loop through all the rapid_namelist files in directory
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
     for namelist_file in file_list:
+        time_start_rapid = datetime.datetime.utcnow()
+
         basin_name = os.path.basename(namelist_file)[15:-4]
         #change the new RAPID namelist file
-        print "Updating namelist file for: " + basin_name + " " + str(ensemble_number)
+        print "Updating namelist file for:", basin_name, ensemble_number
         update_namelist_file(namelist_file, node_path,
                 watershed, basin_name, ensemble_number)
         #remove link to old RAPID namelist file
@@ -180,9 +187,30 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
         #change link to new RAPID namelist file
         os.symlink(namelist_file,rapid_namelist_file)
         #run RAPID
-        print "Running RAPID for: %s Ensemble: %s" % (basin_name, ensemble_number)
+        print "Running RAPID for:", basin_name, "Ensemble:", ensemble_number
         process = Popen([local_rapid_executable], shell=True)
         process.communicate()
+
+        time_stop_rapid = datetime.datetime.utcnow()
+        print "Time to run RAPID:",(time_stop_rapid-time_start_rapid)
+
+        time_start_upload = datetime.datetime.utcnow()
+
+        #Upload to CKAN
+        data_manager.initialize_run_ecmwf(watershed, basin_name, forecast_date_timestep)
+        data_manager.update_resource_ensemble_number(ensemble_number)
+        #tar.gz file
+        output_tar_file =  os.path.join(node_path, "%s.tar.gz" % data_manager.resource_name)
+        outflow_file = os.path.join(node_path, 'Qout_%s_%s.nc' % (basin_name, ensemble_number))
+        if not os.path.exists(output_tar_file):
+            with tarfile.open(output_tar_file, "w:gz") as tar:
+                tar.add(outflow_file, arcname=os.path.basename(outflow_file))
+        #upload file
+        data_manager.upload_resource(output_tar_file, overwrite=True)
+
+        time_stop_upload = datetime.datetime.utcnow()
+        print "Time to upload:", (time_stop_upload-time_start_upload)
+
     #remove rapid link
     try:
         os.unlink(local_rapid_executable)
@@ -196,7 +224,8 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location,
     except OSError:
         pass
 
-def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
+def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location,
+                             data_store_url, data_store_api_key):
     """
     prepare all ECMWF files for rapid
     """
@@ -205,15 +234,14 @@ def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_e
     in_weight_table_node_location = os.path.join(node_path, watershed, in_weight_table)
     forecast_split = forecast_basename.split(".")
     forecast_date_timestep = ".".join(forecast_split[:2])
-    ensemble_number = int(os.path.basename(ecmwf_forecast).split(".")[2])
+    ensemble_number = int(forecast_split[2])
     inflow_file_name = 'm3_riv_bas_%s.nc' % ensemble_number
 
     time_start_all = datetime.datetime.utcnow()
     try:
         #RUN CALCULATIONS
         #prepare ECMWF file for RAPID
-        print "Running all ECMWF downscaling for watershed: %s %s %s ..." % (watershed, forecast_date_timestep,
-                                                                              ensemble_number)
+        print "Running all ECMWF downscaling for watershed:", watershed, forecast_date_timestep, ensemble_number
         print "Converting ECMWF inflow"
         #optional argument ... time interval?
         RAPIDinflowECMWF_tool = CreateInflowFileFromECMWFRunoff()
@@ -221,11 +249,8 @@ def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_e
             in_weight_table_node_location, inflow_file_name)
         time_finish_ecmwf = datetime.datetime.utcnow()
         print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
-        time_start_rapid = datetime.datetime.utcnow()
-        run_RAPID_single_watershed(forecast_basename, watershed, rapid_executable_location,
-                               node_path)
-        time_stop_rapid = datetime.datetime.utcnow()
-        print "Time to run RAPID: %s" % (time_stop_rapid-time_start_rapid)
+        run_RAPID_upload_single_watershed(forecast_basename, watershed, rapid_executable_location,
+                                   node_path, data_store_url, data_store_api_key)
         #CLEAN UP
         print "Cleaning up"
         #remove inflow file
@@ -240,7 +265,7 @@ def prepare_all_inflow_ECMWF(ecmwf_forecast, watershed, in_weight_table, rapid_e
         print "Skipping ECMWF downscaling for: %s %s %s ..." % (watershed, forecast_date_timestep,
                                                                           ensemble_number)
         return False
-    print "Total time to compute: %s" % (time_stop_all-time_start_all)
+    print "Total time to compute and upload: %s" % (time_stop_all-time_start_all)
 
 if __name__ == "__main__":   
-    prepare_all_inflow_ECMWF(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4])
+    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])

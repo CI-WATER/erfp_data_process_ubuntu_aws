@@ -12,8 +12,7 @@ import subprocess
 
 #local imports
 import ftp_ecmwf_download
-from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
-                                                  RAPIDInputDatasetManager)
+from sfpt_dataset_manager.dataset_manager import RAPIDInputDatasetManager
 
 #----------------------------------------------------------------------------------------
 # FUNCTIONS
@@ -158,9 +157,10 @@ def main():
         #create job to downscale forecasts for watershed
         job = CJob('job_%s_%s_%s' % (forecast_date_timestep, watershed, iteration), tmplt.vanilla_transfer_files)
         job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
-        job.set('transfer_input_files', "%s, %s" % (forecast, master_watershed_input_directory))
+        job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
         job.set('initialdir',condor_init_dir)
-        job.set('arguments', '%s %s %s %s' % (forecast, watershed, weight_table_file, rapid_executable_location))
+        job.set('arguments', '%s %s %s %s %s %s' % (forecast, watershed, weight_table_file, rapid_executable_location,
+                                                    data_store_url, data_store_api_key))
         job.set('transfer_output_remaps',"\"%s\"" % (transfer_output_remaps[:-1]))
         job.submit()
         job_list.append(job)
@@ -172,14 +172,12 @@ def main():
 
     time_finish_prepare = datetime.datetime.utcnow()
 
-    if upload_to_ckan and app_instance_id and data_store_url and data_store_api_key:
-        #upload the files to the data store
-        data_manager = ECMWFRAPIDDatasetManager(data_store_url,
-                                       data_store_api_key)
-        data_manager.zip_upload_resources(os.path.join(rapid_io_files_location, 'output'))
+    """
+    if upload_to_ckan and data_store_url and data_store_api_key:
         #delete local datasets
         for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
             rmtree(os.path.join(rapid_io_files_location, 'output', item))
+    """
     """
     #remove all nodes
     subprocess.Popen(["starcluster","-r","eu-west-1","removenode","-n",
