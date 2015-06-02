@@ -57,11 +57,6 @@ Go into *rapid_process_async_ubuntu.py* and change these variables for your inst
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
 
-Go into *compute_ecmwf_rapid.py* and make sure the path location is correct:
-```python
-sys.path.append("/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws")
-```
-
 ##Step 7: Make sure permissions are correct for these files and any directories the script will use
 
 Example:
