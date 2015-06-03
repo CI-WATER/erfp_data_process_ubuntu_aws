@@ -56,12 +56,13 @@ if __name__ == "__main__":
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
         rapid_scripts_location='/home/cecsr/scripts/erfp_data_process_ubuntu_aws',
-        condor_directory='/home/cecsr/condor/',
+        condor_log_directory='/home/cecsr/condor/',
+        main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
         sync_with_ckan=False,
-        download_ecmwf=False,
+        download_ecmwf=True,
         upload_to_ckan=True
     )
 ```

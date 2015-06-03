@@ -17,25 +17,25 @@ from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
 #----------------------------------------------------------------------------------------
 # FUNCTIONS
 #----------------------------------------------------------------------------------------
-def clean_logs(condor_directory, main_log_directory):
+def clean_logs(condor_log_directory, main_log_directory):
     """
     This removed logs older than one week old
     """
     date_today = datetime.datetime.utcnow()
+    week_timedelta = datetime.timedelta(7)
     #clean up condor logs
-    condor_dirs = [d for d in os.listdir(condor_directory) if os.path.isdir(os.path.join(condor_directory, d))]
+    condor_dirs = [d for d in os.listdir(condor_log_directory) if os.path.isdir(os.path.join(condor_log_directory, d))]
     for condor_dir in condor_dirs:
         dir_datetime = datetime.datetime.strptime(condor_dir, "%Y%m%d")
-        if (date_today-dir_datetime > datetime.timedelta(7)):
-            rmtree(os.path.join(condor_directory, condor_dir))
+        if (date_today-dir_datetime > week_timedelta):
+            rmtree(os.path.join(condor_log_directory, condor_dir))
 
     #clean up log files
-    main_log_files = [f for f in os.listdir(condor_directory) if not os.path.isdir(os.path.join(main_log_directory, f))]
+    main_log_files = [f for f in os.listdir(main_log_directory) if not os.path.isdir(os.path.join(main_log_directory, f))]
     for main_log_file in main_log_files:
         log_datetime = datetime.datetime.strptime(main_log_file, "rapid_%y%m%d%H%M%S.log")
-        if (date_today-log_datetime > datetime.timedelta(7)):
+        if (date_today-log_datetime > week_timedelta):
             os.remove(os.path.join(main_log_directory, main_log_file))
-
 
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
                             rapid_scripts_location, condor_log_directory, main_log_directory, data_store_url,
@@ -200,7 +200,8 @@ if __name__ == "__main__":
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
         rapid_scripts_location='/home/cecsr/scripts/erfp_data_process_ubuntu_aws',
-        condor_directory='/home/cecsr/condor/',
+        condor_log_directory='/home/cecsr/condor/',
+        main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
