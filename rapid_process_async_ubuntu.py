@@ -139,6 +139,14 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                 return_data = data_manager.upload_resource(output_tar_file)
                 if not return_data['success']:
                     print return_data
+                    print "Attempting to upload again"
+                    return_data = data_manager.upload_resource(output_tar_file)
+                    if not return_data['success']:
+                        print return_data
+                    else:
+                        print "Upload success"
+                else:
+                    print "Upload success"
                 #remove tar.gz file
                 os.remove(output_tar_file)
 
