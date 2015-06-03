@@ -39,7 +39,7 @@ def clean_logs(condor_log_directory, main_log_directory):
 
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
                             rapid_scripts_location, condor_log_directory, main_log_directory, data_store_url,
-                            data_store_api_key, app_instance_id, sync_with_ckan, download_ecmwf, upload_to_ckan):
+                            data_store_api_key, app_instance_id, sync_rapid_input_with_ckan, download_ecmwf, upload_output_to_ckan):
     """
     This it the main process
     """
@@ -47,7 +47,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     date_string = time_begin_all.strftime('%Y%m%d')
     #date_string = datetime.datetime(2015,2,3).strftime('%Y%m%d')
 
-    if sync_with_ckan and app_instance_id and data_store_url and data_store_api_key:
+    if sync_rapid_input_with_ckan and app_instance_id and data_store_url and data_store_api_key:
         #sync with data store
         ri_manager = RAPIDInputDatasetManager(data_store_url,
                                               data_store_api_key,
@@ -145,7 +145,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     for index, job in enumerate(job_list):
         job.wait()
         #upload file when done
-        if upload_to_ckan and data_store_url and data_store_api_key:
+        if upload_output_to_ckan and data_store_url and data_store_api_key:
             job_info = job_info_list[index]
             print "Uploading", job_info['watershed'], job_info['forecast_date_timestep'], job_info['ensemble_number']
             for outflow_file in job_info['outflow_file_name_list']:
@@ -177,7 +177,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
 
     #TODO: Create Jobs in HTCondor to Initialize Flow
 
-    if upload_to_ckan and data_store_url and data_store_api_key:
+    if upload_output_to_ckan and data_store_url and data_store_api_key:
         #delete local datasets
         for job_info in job_info_list:
             rmtree(job_info['master_watershed_outflow_directory'])
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         data_store_url='http://ciwckan.chpc.utah.edu',
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
-        sync_with_ckan=False,
+        sync_rapid_input_with_ckan=False,
         download_ecmwf=True,
-        upload_to_ckan=True
+        upload_output_to_ckan=True
     )

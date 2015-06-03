@@ -61,9 +61,9 @@ if __name__ == "__main__":
         data_store_url='http://ciwckan.chpc.utah.edu',
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
-        sync_with_ckan=False,
+        sync_rapid_input_with_ckan=False,
         download_ecmwf=True,
-        upload_to_ckan=True
+        upload_output_to_ckan=True
     )
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
