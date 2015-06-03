@@ -17,9 +17,29 @@ from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
 #----------------------------------------------------------------------------------------
 # FUNCTIONS
 #----------------------------------------------------------------------------------------
+def clean_logs(condor_directory, main_log_directory):
+    """
+    This removed logs older than one week old
+    """
+    date_today = datetime.datetime.utcnow()
+    #clean up condor logs
+    condor_dirs = [d for d in os.listdir(condor_directory) if os.path.isdir(os.path.join(condor_directory, d))]
+    for condor_dir in condor_dirs:
+        dir_datetime = datetime.datetime.strptime(condor_dir, "%Y%m%d")
+        if (date_today-dir_datetime > datetime.timedelta(7)):
+            rmtree(os.path.join(condor_directory, condor_dir))
+
+    #clean up log files
+    main_log_files = [f for f in os.listdir(condor_directory) if not os.path.isdir(os.path.join(main_log_directory, f))]
+    for main_log_file in main_log_files:
+        log_datetime = datetime.datetime.strptime(main_log_file, "rapid_%y%m%d%H%M%S.log")
+        if (date_today-log_datetime > datetime.timedelta(7)):
+            os.remove(os.path.join(main_log_directory, main_log_file))
+
+
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
-                            rapid_scripts_location, condor_directory, data_store_url, data_store_api_key,
-                            app_instance_id, sync_with_ckan, download_ecmwf, upload_to_ckan):
+                            rapid_scripts_location, condor_log_directory, main_log_directory, data_store_url,
+                            data_store_api_key, app_instance_id, sync_with_ckan, download_ecmwf, upload_to_ckan):
     """
     This it the main process
     """
@@ -35,8 +55,11 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                                               app_instance_id)
         ri_manager.sync_dataset(os.path.join(rapid_io_files_location,'input'))
 
+    #clean up old log files
+    clean_logs(condor_log_directory, main_log_directory)
+
     #initialize HTCondor Directory
-    condor_init_dir = os.path.join(condor_directory, date_string)
+    condor_init_dir = os.path.join(condor_log_directory, date_string)
     try:
         os.makedirs(condor_init_dir)
     except OSError:
@@ -158,8 +181,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         #delete local datasets
         for job_info in job_info_list:
             rmtree(job_info['master_watershed_outflow_directory'])
-
-    #TODO: Create Log Clean up method
 
     #print info to user
     time_end = datetime.datetime.utcnow()
