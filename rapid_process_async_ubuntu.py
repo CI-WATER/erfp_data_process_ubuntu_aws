@@ -143,11 +143,10 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     time_finish_prepare = datetime.datetime.utcnow()
 
     #TODO: Create Jobs in HTCondor to Initialize Flow
-
     if upload_to_ckan and data_store_url and data_store_api_key:
         #delete local datasets
-        for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
-            rmtree(os.path.join(rapid_io_files_location, 'output', item))
+        for job_info in job_info_list:
+            rmtree(job_info['master_watershed_outflow_directory'])
 
     #TODO: Create Log Clean up method
 
@@ -174,6 +173,6 @@ if __name__ == "__main__":
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
         sync_with_ckan=False,
-        download_ecmwf=False,
+        download_ecmwf=True,
         upload_to_ckan=True
     )
