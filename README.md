@@ -1,5 +1,7 @@
 # erfp_data_process_ubuntu_aws
-Code to use to prepare input data for RAPID from ECMWF forecast using Amazon Web Services (AWS)
+Code to use to prepare input data for RAPID from ECMWF forecast using HTCondor
+
+Note: For steps 1-2, use the *install_rapid_htcondor.sh* at your own risk.
 
 ##Step 1: Install RAPID
 **For Ubuntu:**
@@ -10,7 +12,31 @@ Follow the instructions on page 10-14: http://rapid-hub.org/docs/RAPID_Azure.pdf
 
 Here is a script to download prereqs: http://rapid-hub.org/data/rapid_install_prereqs.sh.gz
 
-##Step 2: Install netCDF4-python
+##Step 2: Install HTCondor
+```
+apt-get install -y libvirt0 libdate-manip-perl vim
+wget http://ciwckan.chpc.utah.edu/dataset/be272798-f2a7-4b27-9dc8-4a131f0bb3f0/resource/86aa16c9-0575-44f7-a143-a050cd72f4c8/download/condor8.2.8312769ubuntu14.04amd64.deb
+dpkg -i condor8.2.8312769ubuntu14.04amd64.deb
+#if master node uncomment CONDOR_HOST and comment out CONDOR_HOST and DAEMON_LIST lines
+#echo CONDOR_HOST = \$\(IP_ADDRESS\)
+echo CONDOR_HOST = 10.8.123.71 >> /etc/condor/condor_config.local
+echo DAEMON_LIST = MASTER, SCHEDD, STARTD >> /etc/condor/condor_config.local
+echo ALLOW_ADMINISTRATOR = \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_OWNER = \$\(FULL_HOSTNAME\), \$\(ALLOW_ADMINISTRATOR\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_READ = \$\(FULL_HOSTNAME\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo ALLOW_WRITE = \$\(FULL_HOSTNAME\), \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
+echo START = True >> /etc/condor/condor_config.local
+echo SUSPEND = False >> /etc/condor/condor_config.local
+echo CONTINUE = True >> /etc/condor/condor_config.local
+echo PREEMPT = False >> /etc/condor/condor_config.local
+echo KILL = False >> /etc/condor/condor_config.local
+echo WANT_SUSPEND = False >> /etc/condor/condor_config.local
+echo WANT_VACATE = False >> /etc/condor/condor_config.local
+. /etc/init.d/condor start
+```
+NOTE: if you forgot to change lines for master node, change CONDOR_HOST = $(IP_ADDRESS)
+and run $ . /etc/init.d/condor restart as ROOT
+##Step 3: Install netCDF4-python
 ###Install on Ubuntu:
 ```
 $ apt-get install python-dev zlib1g-dev libhdf5-serial-dev libnetcdf-dev 
@@ -26,27 +52,27 @@ $ yum install netcdf-devel
 $ pip install numpy
 $ pip install netCDF4
 ```
-##Step 3: Install Other Python Libraries
+##Step 4: Install Other Python Libraries
 ```
 $ pip install requests_toolbelt
 $ pip install tethys_dataset_services
 $ pip install condorpy
 ```
-##Step 4: Download the source code
+##Step 5: Download the source code
 ```
 $ cd /path/to/your/scripts/
 $ git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
 $ git submodule init
 $ git submodule update
 ```
-##Step 5: Create folders for RAPID input and for downloading ECMWF
+##Step 6: Create folders for RAPID input and for downloading ECMWF
 In this instance:
 ```
 $ cd /mnt/sgeadmin/
 $ mkdir rapid ecmwf logs condor
 $ mkdir rapid/input
 ```
-##Step 6: Change the locations in the files
+##Step 7: Change the locations in the files
 Go into *rapid_process_async_ubuntu.py* and change these variables for your instance:
 ```python
 #------------------------------------------------------------------------------
@@ -70,14 +96,14 @@ if __name__ == "__main__":
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
 
-##Step 7: Make sure permissions are correct for these files and any directories the script will use
+##Step 8: Make sure permissions are correct for these files and any directories the script will use
 
 Example:
 ```
 $ chmod 554 rapid_process_async_ubuntu.py
 $ chmod 554 rapid_process.sh
 ```
-##Step 8: Add RAPID files to the work/rapid/input directory
+##Step 9: Add RAPID files to the work/rapid/input directory
 Example:
 ```
 $ ls /rapid/input
@@ -92,7 +118,7 @@ $ ls -lh /rapid/input/huc_region_1209
 -r--r--r-- 1 alan alan 1.2M Mar  9 08:03 weight_low_res.csv
 -r--r--r-- 1 alan alan  55K Mar  6 10:01 x.csv
 ```
-##Step 9: Create CRON job to run the scripts twice daily
+##Step 10: Create CRON job to run the scripts twice daily
 See: http://askubuntu.com/questions/2368/how-do-i-set-up-a-cron-job
 
 You only need to run rapid_process.sh
