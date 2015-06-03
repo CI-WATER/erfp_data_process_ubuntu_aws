@@ -136,13 +136,14 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     with tarfile.open(output_tar_file, "w:gz") as tar:
                         tar.add(outflow_file, arcname=os.path.basename(outflow_file))
                 #upload file
-                data_manager.upload_resource(output_tar_file, overwrite=True)
+                data_manager.upload_resource(output_tar_file)
                 #remove tar.gz file
                 os.remove(output_tar_file)
 
     time_finish_prepare = datetime.datetime.utcnow()
 
     #TODO: Create Jobs in HTCondor to Initialize Flow
+    
     if upload_to_ckan and data_store_url and data_store_api_key:
         #delete local datasets
         for job_info in job_info_list:
