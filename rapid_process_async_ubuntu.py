@@ -111,9 +111,9 @@ def compute_initial_rapid_flows(prediction_files, basin_name, input_directory, f
                 data_nc = NET.Dataset(prediction_file, mode="r")
                 qout_dimensions = data_nc.variables['Qout'].dimensions
                 if qout_dimensions[0] == 'Time' and qout_dimensions[1] == 'COMID':
-                    data_values_2d_array = data_nc.variables['Qout'][:,comid_index_list].transpose()
+                    data_values_2d_array = data_nc.variables['Qout'][2,comid_index_list].transpose()
                     for comid_index, comid in enumerate(reordered_comid_list):
-                        reach_prediciton_array[comid_index][file_index] = data_values_2d_array[comid_index][2]
+                        reach_prediciton_array[comid_index][file_index] = data_values_2d_array[comid_index]
                 else:
                     print "Invalid ECMWF forecast file", prediction_file
                     data_nc.close()
