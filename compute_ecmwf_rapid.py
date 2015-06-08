@@ -35,13 +35,14 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
                      datetime.timedelta(hours=12)).strftime("%Y%m%dt%H")
         qinit_file = os.path.join(rapid_io_files_location,
                                   'Qinit_file_%s_%s.csv' % (basin_name, past_date))
+        init_flow = qinit_file and os.path.exists(qinit_file)
 
     old_file = open(namelist_file)
     fh, abs_path = mkstemp()
     new_file = open(abs_path,'w')
     for line in old_file:
         if line.strip().startswith('BS_opt_Qinit'):
-            if (init_flow and qinit_file):
+            if (init_flow):
                 new_file.write('BS_opt_Qinit       =.true.\n')
             else:
                 new_file.write('BS_opt_Qinit       =.false.\n')
@@ -55,7 +56,7 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
         elif line.strip().startswith('ZS_TauR'):
             new_file.write('ZS_TauR            =%s\n' % interval)
         elif line.strip().startswith('Qinit_file'):
-            if (init_flow and qinit_file):
+            if (init_flow):
                 new_file.write('Qinit_file         =\'%s\'\n' % qinit_file)
             else:
                 new_file.write('Qinit_file         =\'\'\n')

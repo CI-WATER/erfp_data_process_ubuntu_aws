@@ -102,7 +102,7 @@ def compute_initial_rapid_flows(prediction_files, basin_name, input_directory, f
 
         print "Finding COMID indices ..."
         comid_index_list, reordered_comid_list = get_comids_in_netcdf_file(comid_list, prediction_files[0])
-        print "Extracting Data ..."
+        print "Extracting data ..."
         reach_prediciton_array = np.zeros((len(comid_list),len(prediction_files),1))
         #get information from datasets
         for file_index, prediction_file in enumerate(prediction_files):
@@ -124,7 +124,7 @@ def compute_initial_rapid_flows(prediction_files, basin_name, input_directory, f
                 print e
                 #pass
 
-        print "Analyzing Data ..."
+        print "Analyzing data ..."
         output_data = []
         for comid in comid_list:
             try:
@@ -139,10 +139,12 @@ def compute_initial_rapid_flows(prediction_files, basin_name, input_directory, f
             #get mean of series as init flow
             output_data.append([np.mean(reach_prediciton_array[comid_index])])
 
-        print "Writing Output ..."
+        print "Writing output ..."
         with open(init_file_location, 'wb') as outfile:
             writer = csv.writer(outfile)
             writer.writerows(output_data)
+    else:
+        print "No current forecasts found. Skipping ..."
 
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
                             rapid_scripts_location, condor_log_directory, main_log_directory, data_store_url,
@@ -289,7 +291,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         if initialize_flows:
             #create new init flow files
             for watershed in watersheds:
-                print "Initializing flows for", watershed
                 input_directory = os.path.join(rapid_io_files_location, 'input', watershed)
                 path_to_watershed_files = os.path.join(rapid_io_files_location, 'output', watershed)
                 forecast_date_timestep = None
@@ -298,12 +299,14 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     forecast_date_timestep = sorted([d for d in os.listdir(path_to_watershed_files) \
                                         if os.path.isdir(os.path.join(path_to_watershed_files, d))],
                                          reverse=True)[0]
+
                 if forecast_date_timestep:
                     #loop through all the rapid_namelist files in directory
                     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
                     forecast_directory = os.path.join(path_to_watershed_files, forecast_date_timestep)
                     for namelist_file in file_list:
                         basin_name = os.path.basename(namelist_file)[15:-4]
+                        print "Initializing flows for", watershed, basin_name, "from", forecast_date_timestep
                         basin_files = find_current_rapid_output(forecast_directory, basin_name)
                         compute_initial_rapid_flows(basin_files, basin_name,
                                                     input_directory, forecast_date_timestep)
@@ -344,7 +347,7 @@ if __name__ == "__main__":
         data_store_api_key='8dcc1b34-0e09-4ddc-8356-df4a24e5be87',
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
         sync_rapid_input_with_ckan=False,
-        download_ecmwf=True,
-        upload_output_to_ckan=True,
-        initialize_flows=False
+        download_ecmwf=False,
+        upload_output_to_ckan=False,
+        initialize_flows=True
     )
