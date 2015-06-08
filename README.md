@@ -144,3 +144,13 @@ cron_job_evening.minute.on(30)
 cron_job_evening.hour.on(21)
 ```
 
+#Troubleshooting
+If you see this error:
+ImportError: No module named packages.urllib3.poolmanager
+```
+$ pip install pip --upgrade
+```
+Restart your terminal
+```
+$ pip install requests --upgrade
+```
