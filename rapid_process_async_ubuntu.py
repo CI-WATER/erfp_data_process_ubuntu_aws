@@ -315,7 +315,10 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         if upload_output_to_ckan and data_store_url and data_store_api_key:
             #delete local datasets
             for job_info in job_info_list:
-                rmtree(job_info['master_watershed_outflow_directory'])
+                try:
+                    rmtree(job_info['master_watershed_outflow_directory'])
+                except OSError:
+                    pass
             #delete watershed folder if empty
             for item in os.listdir(os.path.join(rapid_io_files_location, 'output')):
                 try:
