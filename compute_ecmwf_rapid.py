@@ -1,10 +1,6 @@
 #!/usr/bin/python
-import csv
 import datetime
-import fcntl
 from glob import glob
-import netCDF4 as NET
-import numpy as np
 import os
 from shutil import move
 from subprocess import Popen
@@ -15,70 +11,8 @@ from erfp_data_process_ubuntu_aws.CreateInflowFileFromECMWFRunoff import CreateI
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
-def find_current_rapid_output(path_to_watershed_files, basin_name, current_date):
-    """
-    Finds the most current files output from RAPID
-    """
-    #check if there are any from 12 hours ago
-    past_date = datetime.datetime.strptime(current_date[:11],"%Y%m%d.%H") - \
-        datetime.timedelta(0,12*60*60)
-    past_hour = '1200' if past_date.hour > 11 else '0'
-    path_to_files = os.path.join(path_to_watershed_files,
-        past_date.strftime("%Y%m%d")+'.'+past_hour)
-    if os.path.exists(path_to_files):
-        basin_files = glob(os.path.join(path_to_files,"*"+basin_name+"*.nc"))
-        if len(basin_files) >0:
-            return basin_files
-    #there are none found
-    return None
-
-def compute_initial_rapid_flows(basin_ensemble_files, basin_name, input_directory, output_directory):
-    """
-    Gets mean of all 52 ensembles 12-hrs ago and prints to csv as initial flow
-    Qinit_file (BS_opt_Qinit)
-    Qfinal_file (BS_opt_Qfinal)
-    The assumptions are that Qinit_file is ordered the same way as rapid_connect_file,
-    and that Qfinal_file (produced when RAPID runs) is ordered the same way as your riv_bas_id_file.
-    """
-    init_file_location = os.path.join(output_directory,'Qinit_file_'+basin_name+'.csv')
-    #check to see if exists and only perform operation once
-    if not os.path.exists(init_file_location) and basin_ensemble_files:
-        #collect data into matrix
-        all_data_series = []
-        reach_ids = []
-        for in_nc in basin_ensemble_files:
-            data_nc = NET.Dataset(in_nc)
-            qout = data_nc.variables['Qout']
-            #get flow at 12 hr time step for all reaches
-            dataValues = qout[2,:].clip(min=0)
-            if (len(reach_ids) <= 0):
-                reach_ids = data_nc.variables['COMID'][:]
-            all_data_series.append(dataValues)
-            data_nc.close()
-        #get mean of each reach at time step
-        mean_data = np.array(np.matrix(all_data_series).mean(0).T)
-        #add zeros for reaches not in subbasin
-        rapid_connect_file = open(os.path.join(input_directory,'rapid_connect.csv'))
-        all_reach_ids = []
-        for row in rapid_connect_file:
-            all_reach_ids.append(int(row.split(",")[0]))
-
-        #if the reach is not in the subbasin initialize it with zero
-        initial_flows = np.array(np.zeros((1,len(all_reach_ids)), dtype='float32').T)
-        subbasin_reach_index = 0
-        for reach_id in reach_ids:
-            new_index = all_reach_ids.index(reach_ids[subbasin_reach_index])
-            initial_flows[:][new_index] = mean_data[:][subbasin_reach_index]
-            subbasin_reach_index+=1
-        #print to csv file
-        csv_file = open(init_file_location,"wb")
-        writer = csv.writer(csv_file)
-        writer.writerows(initial_flows)
-        csv_file.close()
-
-
 def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basin_name,
-                         ensemble_number, init_flow = False):
+                         ensemble_number, forecast_date_timestep, init_flow = False):
     """
     Update RAPID namelist file with new inflow file and output location
     """
@@ -94,12 +28,20 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
         #interval of 3 hrs
         #interval = 3*60*60
 
+    qinit_file = None
+    if(init_flow):
+        #check for qinit file
+        past_date = (datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H") - \
+                     datetime.timedelta(hours=12)).strftime("%Y%m%dt%H")
+        qinit_file = os.path.join(rapid_io_files_location,
+                                  'Qinit_file_%s_%s.csv' % (basin_name, past_date))
+
     old_file = open(namelist_file)
     fh, abs_path = mkstemp()
     new_file = open(abs_path,'w')
     for line in old_file:
         if line.strip().startswith('BS_opt_Qinit'):
-            if (init_flow):
+            if (init_flow and qinit_file):
                 new_file.write('BS_opt_Qinit       =.true.\n')
             else:
                 new_file.write('BS_opt_Qinit       =.false.\n')
@@ -113,9 +55,8 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
         elif line.strip().startswith('ZS_TauR'):
             new_file.write('ZS_TauR            =%s\n' % interval)
         elif line.strip().startswith('Qinit_file'):
-            if (init_flow):
-                new_file.write('Qinit_file         =\'%s\'\n' % os.path.join(rapid_io_files_location,
-                                                                          'Qinit_file_%s.csv' % basin_name))
+            if (init_flow and qinit_file):
+                new_file.write('Qinit_file         =\'%s\'\n' % qinit_file)
             else:
                 new_file.write('Qinit_file         =\'\'\n')
         elif line.strip().startswith('rapid_connect_file'):
@@ -149,7 +90,7 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
     #Move new file
     move(abs_path, namelist_file)
 
-def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, node_path):
+def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, node_path, init_flow):
     """
     run RAPID on single watershed after ECMWF prepared
     """
@@ -171,7 +112,9 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
         #change the new RAPID namelist file
         print "Updating namelist file for:", basin_name, ensemble_number
         update_namelist_file(namelist_file, node_path,
-                             watershed, basin_name, ensemble_number)
+                             watershed, basin_name,
+                             ensemble_number, forecast_date_timestep,
+                             init_flow)
         #remove link to old RAPID namelist file
         try:
             os.unlink(rapid_namelist_file)
@@ -201,7 +144,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
     except OSError:
         pass
 
-def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location):
+def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location, init_flow):
     """
     prepare all ECMWF files for rapid
     """
@@ -225,7 +168,7 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
             in_weight_table_node_location, inflow_file_name)
         time_finish_ecmwf = datetime.datetime.utcnow()
         print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
-        run_RAPID_single_watershed(forecast_basename, watershed, rapid_executable_location, node_path)
+        run_RAPID_single_watershed(forecast_basename, watershed, rapid_executable_location, node_path, init_flow)
         #CLEAN UP
         print "Cleaning up"
         #remove inflow file
@@ -243,4 +186,4 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
     print "Total time to compute: %s" % (time_stop_all-time_start_all)
 
 if __name__ == "__main__":   
-    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4])
+    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
