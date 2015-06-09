@@ -134,10 +134,8 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
 
 
     #convert rapid output
-    print "Converting RAPID output to be CF compliant ..."
-    time_start_convert = datetime.datetime.utcnow()
-    convert_ecmwf_rapid_output_to_cf_compliant(watershed, )
-    print "Time to convert RAPID ouput:",(datetime.datetime.utcnow()-time_start_convert)
+    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
+                                               datetime.datetime.strptime("%Y%m%d.%H", forecast_date_timestep[:11]))
 
     #remove rapid link
     try:
