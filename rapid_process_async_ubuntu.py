@@ -265,14 +265,14 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     #Upload to CKAN
                     data_manager.initialize_run_ecmwf(job_info['watershed'], basin_name, job_info['forecast_date_timestep'])
                     data_manager.update_resource_ensemble_number(job_info['ensemble_number'])
-                    #tar.gz file
-                    output_tar_file =  os.path.join(job_info['master_watershed_outflow_directory'], "%s.tar.gz" % data_manager.resource_name)
-                    if not os.path.exists(output_tar_file):
-                        with tarfile.open(output_tar_file, "w:gz") as tar:
-                            tar.add(outflow_file, arcname=os.path.basename(outflow_file))
                     #upload file
-                    return_data = data_manager.upload_resource(output_tar_file)
                     try:
+                        #tar.gz file
+                        output_tar_file =  os.path.join(job_info['master_watershed_outflow_directory'], "%s.tar.gz" % data_manager.resource_name)
+                        if not os.path.exists(output_tar_file):
+                            with tarfile.open(output_tar_file, "w:gz") as tar:
+                                tar.add(outflow_file, arcname=os.path.basename(outflow_file))
+                        return_data = data_manager.upload_resource(output_tar_file)
                         if not return_data['success']:
                             print return_data
                             print "Attempting to upload again"
@@ -283,7 +283,8 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                                 print "Upload success"
                         else:
                             print "Upload success"
-                    except TypeError:
+                    except Exception, e:
+                        print e
                         pass
                     #remove tar.gz file
                     os.remove(output_tar_file)
