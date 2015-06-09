@@ -315,7 +315,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
             if at_header:
                 at_header = False
             elif index < id_count:
-                comids[index] = int(row[0])
+                comids[index] = int(float(row[0]))
 
                 lat = float(row[1])
                 lats[index] = lat
