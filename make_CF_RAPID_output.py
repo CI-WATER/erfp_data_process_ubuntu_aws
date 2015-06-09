@@ -366,7 +366,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     if z_max is not None:
         cf_nc.geospatial_vertical_max = z_max
 
-def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
+def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start_folder=None):
     """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
 
     Arguments:
@@ -374,7 +374,10 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
     """
 
     try:
-        path = get_this_path()
+        if start_folder:
+            path = start_folder
+        else:
+            path = get_this_path()
 
         time_step = 21600 #time step in seconds
         output_id_dim_name = 'COMID' #name of ID dimension in output file, typically COMID or FEATUREID
