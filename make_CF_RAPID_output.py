@@ -397,7 +397,3 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
         log('Files processed: ' + str(len(inputs)), 'INFO')
     except:
         log('Error in main function', 'ERROR')
-
-
-if __name__ == "__main__":
-    #convert_ecmwf_rapid_output_to_cf_compliant()
