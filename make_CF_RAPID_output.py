@@ -381,7 +381,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
         output_flow_var_name = 'Qout' #name of streamflow variable in output file, typically Qout or m3_riv
 
         # Get files to process
-        inputs = glob(os.path.join(path),"Qout*.nc")
+        inputs = glob(os.path.join(path,"Qout*.nc"))
         if len(inputs) == 0:
             log('No files to process', 'INFO')
             return
