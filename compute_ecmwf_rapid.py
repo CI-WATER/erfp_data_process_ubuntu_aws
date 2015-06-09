@@ -8,6 +8,7 @@ import sys
 from tempfile import mkstemp
 
 from erfp_data_process_ubuntu_aws.CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
+from erfp_data_process_ubuntu_aws.make_CF_RAPID_output import convert_ecmwf_rapid_output_to_cf_compliant
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
@@ -129,8 +130,12 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
         process = Popen([local_rapid_executable], shell=True)
         process.communicate()
 
-        time_stop_rapid = datetime.datetime.utcnow()
-        print "Time to run RAPID:",(time_stop_rapid-time_start_rapid)
+        print "Time to run RAPID:",(datetime.datetime.utcnow()-time_start_rapid)
+
+
+    #convert rapid output to be CF compliant
+    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
+                                               datetime.datetime.strptime("%Y%m%d.%H", forecast_date_timestep[:11]))
 
     #remove rapid link
     try:
