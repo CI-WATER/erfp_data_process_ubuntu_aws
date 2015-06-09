@@ -374,23 +374,11 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
     """
 
     try:
-        # Read config parameters
-        config = ConfigParser.RawConfigParser()
-        try:
-            config.read('cf_config.cfg')
-        except:
-            log('Failed to read config file', 'ERROR')
-            return
-
         path = get_this_path()
 
-        try:
-            time_step = int(config.get('input', 'time_step'))
-            output_id_dim_name = config.get('output', 'id_dim')
-            output_flow_var_name = config.get('output', 'flow_var')
-        except:
-            log('Failed to read parameters from config', 'ERROR')
-            return
+        time_step = 21600 #time step in seconds
+        output_id_dim_name = 'COMID' #name of ID dimension in output file, typically COMID or FEATUREID
+        output_flow_var_name = 'Qout' #name of streamflow variable in output file, typically Qout or m3_riv
 
         # Get files to process
         inputs = glob(os.path.join(path),"Qout*.nc")
