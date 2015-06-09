@@ -63,6 +63,7 @@ from datetime import datetime, timedelta
 from glob import glob
 import inspect
 import os
+import re
 import shutil
 
 from netCDF4 import Dataset
@@ -385,8 +386,6 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
 
         try:
             time_step = int(config.get('input', 'time_step'))
-            input_id_dim_name = config.get('input', 'id_dim')
-            input_flow_var_name = config.get('input', 'flow_var')
             output_id_dim_name = config.get('output', 'id_dim')
             output_flow_var_name = config.get('output', 'flow_var')
         except:
@@ -412,15 +411,20 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
                 time_start_conversion = datetime.utcnow()
-                # Get dimension size of input file
+
+                log('Processing ' + rapid_nc_filename, 'INFO')
+
+                # Validate the raw netCDF file
                 rapid_nc = Dataset(rapid_nc_filename)
-                time_len = len(rapid_nc.dimensions['Time'])
-                id_len = len(rapid_nc.dimensions[input_id_dim_name])
+                log('validating input netCDF file', 'DEBUG')
+                input_id_dim_name, id_len, time_len, input_flow_var_name = (
+                    validate_raw_nc(rapid_nc))
 
                 # Initialize the output file (create dimensions and variables)
+                log('initializing output', 'DEBUG')
                 cf_nc = initialize_output(cf_nc_filename, output_id_dim_name,
-                                          output_flow_var_name, time_len, id_len,
-                                          time_step)
+                                          time_len, id_len, time_step)
+
 
                 # Copy flow values. Tranpose to use NODC's dimension order.
                 cf_nc.variables[output_flow_var_name][:] = rapid_nc.variables[input_flow_var_name][:].transpose()
