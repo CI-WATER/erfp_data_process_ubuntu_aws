@@ -401,9 +401,8 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
             if os.path.exists(comid_lat_lon_z_lookup_filename):
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
+                log('New file %s' % cf_nc_filename, 'INFO')
                 time_start_conversion = datetime.utcnow()
-
-                log('Processing ' + rapid_nc_filename, 'INFO')
 
                 # Validate the raw netCDF file
                 rapid_nc = Dataset(rapid_nc_filename)
@@ -415,11 +414,6 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
                 log('initializing output', 'DEBUG')
                 cf_nc = initialize_output(cf_nc_filename, output_id_dim_name,
                                           time_len, id_len, time_step)
-
-
-                # Copy flow values. Tranpose to use NODC's dimension order.
-                cf_nc.variables[output_flow_var_name][:] = rapid_nc.variables[input_flow_var_name][:].transpose()
-                rapid_nc.close()
 
                 # Populate time values
                 log('writing times', 'DEBUG')
@@ -435,7 +429,6 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
                 cf_nc.time_coverage_end = end_date.isoformat() + 'Z'
 
                 # Populate comid, lat, lon, z
-                lookup_filename = os.path.join(path, 'comid_lat_lon_z.csv')
                 log('writing comid lat lon z', 'DEBUG')
                 lookup_start = datetime.now()
                 write_comid_lat_lon_z(cf_nc, comid_lat_lon_z_lookup_filename, output_id_dim_name)
