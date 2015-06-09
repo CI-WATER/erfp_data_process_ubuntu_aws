@@ -196,8 +196,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         subbasin_name_search = re.compile(r'Qout_(\w+)_\d+.nc')
 
     #prepare ECMWF files
-    time_start_prepare = datetime.datetime.utcnow()
-
     for ecmwf_folder in ecmwf_folders:
         ecmwf_forecasts = glob(os.path.join(ecmwf_folder,'*.runoff.netcdf'))
         #make the largest files first
@@ -291,8 +289,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     #remove tar.gz file
                     os.remove(output_tar_file)
 
-        time_finish_prepare = datetime.datetime.utcnow()
-
         #initialize flows for next run
         if initialize_flows:
             #create new init flow files
@@ -335,9 +331,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     #print info to user
     time_end = datetime.datetime.utcnow()
     print "Time Begin All: " + str(time_begin_all)
-    print "Time to Download: " + str(time_start_prepare - time_begin_all)
-    print "Time Start Prepare: " + str(time_start_prepare)
-    print "Time to Prepare Forecasts: " + str(time_finish_prepare-time_start_prepare)
     print "Time Finish All: " + str(time_end)
     print "TOTAL TIME: "  + str(time_end-time_begin_all)
 
