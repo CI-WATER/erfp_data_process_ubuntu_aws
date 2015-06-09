@@ -263,7 +263,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                 for outflow_file in job_info['outflow_file_name_list']:
                     basin_name = subbasin_name_search.search(os.path.basename(outflow_file)).group(1)
                     #Upload to CKAN
-                    data_manager.initialize_run_ecmwf(job_info['watershed'], basin_name, job_info['forecast_date_timestep'])
+                    data_manager.initialize_run_ecmwf(job_info['watershed'].lower(), basin_name.lower(), job_info['forecast_date_timestep'])
                     data_manager.update_resource_ensemble_number(job_info['ensemble_number'])
                     #upload file
                     try:
