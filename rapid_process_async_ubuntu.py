@@ -112,14 +112,16 @@ def compute_initial_rapid_flows(prediction_files, basin_name, input_directory, f
                 qout_dimensions = data_nc.variables['Qout'].dimensions
                 if qout_dimensions[0] == 'Time' and qout_dimensions[1] == 'COMID':
                     data_values_2d_array = data_nc.variables['Qout'][2,comid_index_list].transpose()
-                    for comid_index, comid in enumerate(reordered_comid_list):
-                        reach_prediciton_array[comid_index][file_index] = data_values_2d_array[comid_index]
+                if qout_dimensions[1] == 'Time' and qout_dimensions[0] == 'COMID':
+                    data_values_2d_array = data_nc.variables['Qout'][comid_index_list,2]
                 else:
                     print "Invalid ECMWF forecast file", prediction_file
                     data_nc.close()
                     continue
                 data_nc.close()
-
+                #organize the data
+                for comid_index, comid in enumerate(reordered_comid_list):
+                    reach_prediciton_array[comid_index][file_index] = data_values_2d_array[comid_index]
             except Exception, e:
                 print e
                 #pass
