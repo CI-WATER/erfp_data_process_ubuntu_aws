@@ -133,7 +133,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
         print "Time to run RAPID:",(datetime.datetime.utcnow()-time_start_rapid)
 
 
-    #convert rapid output
+    #convert rapid output to be CF compliant
     convert_ecmwf_rapid_output_to_cf_compliant(watershed,
                                                datetime.datetime.strptime("%Y%m%d.%H", forecast_date_timestep[:11]))
 

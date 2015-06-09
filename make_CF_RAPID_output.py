@@ -341,7 +341,6 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
         subbasin_name_search = re.compile(r'Qout_(\w+)_\d+.nc')
         for rapid_nc_filename in inputs:
 
-
             #make sure comid_lat_lon_z file exists before proceeding
             subbasin_name = subbasin_name_search.search(os.path.basename(rapid_nc_filename)).group(1)
             comid_lat_lon_z_lookup_filename = os.path.join(path,
@@ -351,7 +350,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
             if os.path.exists(comid_lat_lon_z_lookup_filename):
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
-
+                time_start_conversion = datetime.utcnow()
                 # Get dimension size of input file
                 rapid_nc = Dataset(rapid_nc_filename)
                 time_len = len(rapid_nc.dimensions['Time'])
@@ -391,6 +390,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
 
                 #replace original with nc compliant file
                 shutil.move(cf_nc_filename, rapid_nc_filename)
+                log('Time to process %s' % (datetime.utcnow()-time_start_conversion), 'INFO')
             else:
                 log("No comid_lat_lon_z found for subbasin %s. Skipping ..." % subbasin_name, "INFO")
 
