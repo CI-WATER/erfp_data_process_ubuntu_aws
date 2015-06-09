@@ -484,5 +484,5 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
                 log("No comid_lat_lon_z found for subbasin %s. Skipping ..." % subbasin_name, "INFO")
 
         log('Files processed: ' + str(len(inputs)), 'INFO')
-    except:
-        log('Error in main function', 'ERROR')
+    except Exception, e:
+        log('Error in main function %s' % e, 'ERROR')
