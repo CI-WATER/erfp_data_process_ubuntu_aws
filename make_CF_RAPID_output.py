@@ -58,32 +58,36 @@ References:
 """
 
 import ConfigParser
+import csv
 from datetime import datetime, timedelta
 from glob import glob
+import inspect
 import os
 import re
 import shutil
+
 from netCDF4 import Dataset
 import numpy as np
 
 
-def get_this_path():
-    """Returns path to the main script being executed.
+def get_this_file():
+    """Returns full filename of this script.
 
-    Remarks:
-        When run as scheduled task, os.getcwd() returns C:\Windows\system32.
-        This means if you leave out the full path to files, path defaults to
-        system32. If you want to access files relative to the current script,
-        you can use the path to __file__, but sometimes (don't know why) this
-        returns NameError: name '__file__' is not defined. This function has
-        a workaround to get you the path to the current script no matter how
-        you are running the script.
+    Remarks: Inspect sometimes only gives filename without path if run from
+    command prompt or as a Windows scheduled task with a Start in location
+    specified.
     """
 
-    try:
-        return os.path.dirname(os.path.realpath(__file__))
-    except:
-        return os.getcwd()
+    f = inspect.stack()[0][1]
+    if not os.path.isfile(f):
+        f = os.path.realpath(__file__)
+    return f
+
+
+def get_this_path():
+    """Returns path to this script."""
+
+    return os.path.dirname(get_this_file())
 
 
 def log(message, severity):
@@ -97,82 +101,87 @@ def log(message, severity):
 
     print_me = ['WARNING', 'INFO', 'DEBUG']
     if severity in print_me:
-        print message
+        print severity, message
     else:
         raise Exception(message)
 
 
-def initialize_output(filename, id_dim_name, flow_var_name, time_len,
+
+def get_input_nc_files(folder):
+    files = []
+    for f in os.listdir(folder):
+        if f.endswith('.nc'):
+            files.append(f)
+    return files
+
+
+def validate_raw_nc(nc):
+    """Checks that raw netCDF file has the right dimensions and variables.
+
+    Arguments:
+        nc -- netCDF dataset object representing raw RAPID output
+
+    Returns:
+        name of ID dimension,
+        length of time dimension,
+        name of flow variable
+
+    Remarks: Raises exception if file doesn't validate.
+    """
+
+    dims = nc.dimensions
+    if 'COMID' in dims:
+        id_dim_name = 'COMID'
+    elif 'FEATUREID' in dims:
+        id_dim_name = 'FEATUREID'
+    else:
+        msg = 'Could not find ID dimension. Looked for COMID and FEATUREID.'
+        raise Exception(msg)
+    id_len = len(dims[id_dim_name])
+
+    if 'Time' not in dims:
+        msg = 'Could not find time dimension. Looked for Time.'
+        raise Exception(msg)
+    time_len = len(dims['Time'])
+
+    variables = nc.variables
+    id_var_name = None
+    if 'COMID' in dims:
+        id_var_name = 'COMID'
+    elif 'FEATUREID' in dims:
+        id_var_name = 'FEATUREID'
+    if id_var_name is not None and id_var_name != id_dim_name:
+        msg = ('ID dimension name (' + id_dim_name + ') does not equal ID ' +
+               'variable name (' + id_var_name + ').')
+        log(msg, 'WARNING')
+
+    if 'Qout' in variables:
+        q_var_name = 'Qout'
+    elif 'm3_riv' in variables:
+        q_var_name = 'm3_riv'
+    else:
+        msg = 'Could not find flow variable. Looked for Qout and m3_riv.'
+        raise Exception(msg)
+
+    return id_dim_name, id_len, time_len, q_var_name
+
+
+def initialize_output(filename, id_dim_name, time_len,
                       id_len, time_step_seconds):
     """Creates netCDF file with CF dimensions and variables, but no data.
 
     Arguments:
         filename -- full path and filename for output netCDF file
         id_dim_name -- name of Id dimension and variable, e.g., COMID
-        flow_var_name -- name of streamflow variable, e.g., Qout
         time_len -- (integer) length of time dimension (number of time steps)
         id_len -- (integer) length of Id dimension (number of time series)
         time_step_seconds -- (integer) number of seconds per time step
     """
 
-    # Create dimensions
     cf_nc = Dataset(filename, 'w', format='NETCDF3_CLASSIC')
-    cf_nc.createDimension('time', time_len)
-    cf_nc.createDimension(id_dim_name, id_len)
-
-    # Create variables
-    timeSeries_var = cf_nc.createVariable(id_dim_name, 'i4', (id_dim_name,))
-    timeSeries_var.long_name = (
-        'Unique NHDPlus COMID identifier for each river reach feature')
-    timeSeries_var.cf_role = 'timeseries_id'
-
-    time_var = cf_nc.createVariable('time', 'i4', ('time',))
-    time_var.long_name = 'time'
-    time_var.standard_name = 'time'
-    time_var.units = 'seconds since 1970-01-01 00:00:00 0:00'
-    time_var.axis = 'T'
-
-    lat_var = cf_nc.createVariable('lat', 'f8', (id_dim_name,),
-                                   fill_value=-9999.0)
-    lat_var.long_name = 'latitude'
-    lat_var.standard_name = 'latitude'
-    lat_var.units = 'degrees_north'
-    lat_var.axis = 'Y'
-
-    lon_var = cf_nc.createVariable('lon', 'f8', (id_dim_name,),
-                                   fill_value=-9999.0)
-    lon_var.long_name = 'longitude'
-    lon_var.standard_name = 'longitude'
-    lon_var.units = 'degrees_east'
-    lon_var.axis = 'X'
-
-    z_var = cf_nc.createVariable('z', 'f8', (id_dim_name,),
-                                 fill_value=-9999.0)
-    z_var.long_name = ('Elevation referenced to the North American ' +
-                       'Vertical Datum of 1988 (NAVD88)')
-    z_var.standard_name = 'surface_altitude'
-    z_var.units = 'm'
-    z_var.axis = 'Z'
-    z_var.positive = 'up'
-
-    q_var = cf_nc.createVariable(flow_var_name, 'f4', (id_dim_name, 'time'))
-    q_var.long_name = 'Discharge'
-    q_var.units = 'm^3/s'
-    q_var.coordinates = 'time lat lon z'
-    q_var.grid_mapping = 'crs'
-    q_var.source = ('Generated by the Routing Application for Parallel ' +
-                    'computatIon of Discharge (RAPID) river routing model.')
-    q_var.references = 'http://rapid-hub.org/'
-    q_var.comment = ('lat, lon, and z values taken at midpoint of river ' +
-                     'reach feature')
-
-    crs_var = cf_nc.createVariable('crs', 'i4')
-    crs_var.grid_mapping_name = 'latitude_longitude'
-    crs_var.epsg_code = 'EPSG:4269'  # NAD83, which is what NHD uses.
-    crs_var.semi_major_axis = 6378137.0
-    crs_var.inverse_flattening = 298.257222101
 
     # Create global attributes
+    log('    globals', 'DEBUG')
     cf_nc.featureType = 'timeSeries'
     cf_nc.Metadata_Conventions = 'Unidata Dataset Discovery v1.0'
     cf_nc.Conventions = 'CF-1.6'
@@ -214,6 +223,59 @@ def initialize_output(filename, id_dim_name, flow_var_name, time_len,
     cf_nc.history = (timestamp + '; added time, lat, lon, z, crs variables; ' +
                      'added metadata to conform to NODC_NetCDF_TimeSeries_' +
                      'Orthogonal_Template_v1.1')
+
+    # Create dimensions
+    log('    dimming', 'DEBUG')
+    cf_nc.createDimension('time', time_len)
+    cf_nc.createDimension(id_dim_name, id_len)
+
+    # Create variables
+    log('    timeSeries_var', 'DEBUG')
+    timeSeries_var = cf_nc.createVariable(id_dim_name, 'i4', (id_dim_name,))
+    timeSeries_var.long_name = (
+        'Unique NHDPlus COMID identifier for each river reach feature')
+    timeSeries_var.cf_role = 'timeseries_id'
+
+    log('    time_var', 'DEBUG')
+    time_var = cf_nc.createVariable('time', 'i4', ('time',))
+    time_var.long_name = 'time'
+    time_var.standard_name = 'time'
+    time_var.units = 'seconds since 1970-01-01 00:00:00 0:00'
+    time_var.axis = 'T'
+
+    log('    lat_var', 'DEBUG')
+    lat_var = cf_nc.createVariable('lat', 'f8', (id_dim_name,),
+                                   fill_value=-9999.0)
+    lat_var.long_name = 'latitude'
+    lat_var.standard_name = 'latitude'
+    lat_var.units = 'degrees_north'
+    lat_var.axis = 'Y'
+
+    log('    lon_var', 'DEBUG')
+    lon_var = cf_nc.createVariable('lon', 'f8', (id_dim_name,),
+                                   fill_value=-9999.0)
+    lon_var.long_name = 'longitude'
+    lon_var.standard_name = 'longitude'
+    lon_var.units = 'degrees_east'
+    lon_var.axis = 'X'
+
+    log('    z_var', 'DEBUG')
+    z_var = cf_nc.createVariable('z', 'f8', (id_dim_name,),
+                                 fill_value=-9999.0)
+    z_var.long_name = ('Elevation referenced to the North American ' +
+                       'Vertical Datum of 1988 (NAVD88)')
+    z_var.standard_name = 'surface_altitude'
+    z_var.units = 'm'
+    z_var.axis = 'Z'
+    z_var.positive = 'up'
+
+    log('    crs_var', 'DEBUG')
+    crs_var = cf_nc.createVariable('crs', 'i4')
+    crs_var.grid_mapping_name = 'latitude_longitude'
+    crs_var.epsg_code = 'EPSG:4269'  # NAD83, which is what NHD uses.
+    crs_var.semi_major_axis = 6378137.0
+    crs_var.inverse_flattening = 298.257222101
+
     return cf_nc
 
 
@@ -229,8 +291,6 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
         Lookup table is a CSV file with COMID, Lat, Lon, and Elev_m columns.
         Columns must be in that order and these must be the first four columns.
     """
-
-    import csv
 
     # Get relevant arrays while we update them
     comids = cf_nc.variables[id_var_name][:]
@@ -256,7 +316,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
                 at_header = False
             elif index < id_count:
                 comids[index] = int(row[0])
-                        
+
                 lat = float(row[1])
                 lats[index] = lat
                 if (lat_min) is None or lat < lat_min:
@@ -287,8 +347,10 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     cf_nc.variables['z'][:] = zs
 
     if index != id_count:
-        msg = 'COMIDs in netCDF: %s. COMIDs in lat-lon-z lookup table: %s'  % (id_count, index)
-        log(msg, 'WARNING')
+        msg = ('Number of features from model (' + str(id_count) + ') ' +
+               'does not match number of Ids in lat-lon-z lookup (' +
+               str(index) + ')')
+        log(msg, 'ERROR')
 
     # Update metadata
     if lat_min is not None:
@@ -324,8 +386,6 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
 
         try:
             time_step = int(config.get('input', 'time_step'))
-            input_id_dim_name = config.get('input', 'id_dim')
-            input_flow_var_name = config.get('input', 'flow_var')
             output_id_dim_name = config.get('output', 'id_dim')
             output_flow_var_name = config.get('output', 'flow_var')
         except:
@@ -351,21 +411,27 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
                 time_start_conversion = datetime.utcnow()
-                # Get dimension size of input file
+
+                log('Processing ' + rapid_nc_filename, 'INFO')
+
+                # Validate the raw netCDF file
                 rapid_nc = Dataset(rapid_nc_filename)
-                time_len = len(rapid_nc.dimensions['Time'])
-                id_len = len(rapid_nc.dimensions[input_id_dim_name])
+                log('validating input netCDF file', 'DEBUG')
+                input_id_dim_name, id_len, time_len, input_flow_var_name = (
+                    validate_raw_nc(rapid_nc))
 
                 # Initialize the output file (create dimensions and variables)
+                log('initializing output', 'DEBUG')
                 cf_nc = initialize_output(cf_nc_filename, output_id_dim_name,
-                                          output_flow_var_name, time_len, id_len,
-                                          time_step)
+                                          time_len, id_len, time_step)
+
 
                 # Copy flow values. Tranpose to use NODC's dimension order.
                 cf_nc.variables[output_flow_var_name][:] = rapid_nc.variables[input_flow_var_name][:].transpose()
                 rapid_nc.close()
 
                 # Populate time values
+                log('writing times', 'DEBUG')
                 total_seconds = time_step * time_len
                 end_date = (start_date +
                             timedelta(seconds=(total_seconds - time_step)))
@@ -378,7 +444,30 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date):
                 cf_nc.time_coverage_end = end_date.isoformat() + 'Z'
 
                 # Populate comid, lat, lon, z
+                lookup_filename = os.path.join(path, 'comid_lat_lon_z.csv')
+                log('writing comid lat lon z', 'DEBUG')
+                lookup_start = datetime.now()
                 write_comid_lat_lon_z(cf_nc, comid_lat_lon_z_lookup_filename, output_id_dim_name)
+                duration = str((datetime.now() - lookup_start).total_seconds())
+                log('Lookup Duration (s): ' + duration, 'DEBUG')
+
+                # Create a variable for streamflow. This is big, and slows down
+                # previous steps if we do it earlier.
+                log('Creating streamflow variable', 'DEBUG')
+                q_var = cf_nc.createVariable(
+                    output_flow_var_name, 'f4', (output_id_dim_name, 'time'))
+                q_var.long_name = 'Discharge'
+                q_var.units = 'm^3/s'
+                q_var.coordinates = 'time lat lon z'
+                q_var.grid_mapping = 'crs'
+                q_var.source = ('Generated by the Routing Application for Parallel ' +
+                                'computatIon of Discharge (RAPID) river routing model.')
+                q_var.references = 'http://rapid-hub.org/'
+                q_var.comment = ('lat, lon, and z values taken at midpoint of river ' +
+                                 'reach feature')
+                log('Copying streamflow values', 'DEBUG')
+                q_var[:] = np.transpose(rapid_nc.variables[input_flow_var_name][:])
+                rapid_nc.close()
 
                 cf_nc.close()
 
