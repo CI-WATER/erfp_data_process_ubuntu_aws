@@ -307,7 +307,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
                     forecast_directory = os.path.join(path_to_watershed_files, forecast_date_timestep)
                     for namelist_file in file_list:
-                        basin_name = os.path.basename(namelist_file)[15:-4]
+                        basin_name = os.path.basename(namelist_file)[15:-4].lower()
                         print "Initializing flows for", watershed, basin_name, "from", forecast_date_timestep
                         basin_files = find_current_rapid_output(forecast_directory, basin_name)
                         compute_initial_rapid_flows(basin_files, basin_name,
