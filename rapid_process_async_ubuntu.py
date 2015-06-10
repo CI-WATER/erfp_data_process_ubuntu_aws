@@ -224,7 +224,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             outflow_file_name_list = []
             for namelist_file in file_list:
                 basin_name = os.path.basename(namelist_file)[15:-4]
-                outflow_file_name = 'Qout_%s_%s.nc' % (basin_name, ensemble_number)
+                outflow_file_name = 'Qout_%s_%s.nc' % (basin_name.lower(), ensemble_number)
                 node_rapid_outflow_file = outflow_file_name
                 master_rapid_outflow_file = os.path.join(master_watershed_outflow_directory, outflow_file_name)
                 transfer_output_remaps += "%s = %s;" % (node_rapid_outflow_file, master_rapid_outflow_file)
