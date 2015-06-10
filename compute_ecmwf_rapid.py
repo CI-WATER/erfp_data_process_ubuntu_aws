@@ -79,7 +79,7 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
                                                                           'x.csv'))
         elif line.strip().startswith('Qout_file'):
             new_file.write('Qout_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
-                                                                          'Qout_%s_%s.nc' % (basin_name, ensemble_number)))
+                                                                          'Qout_%s_%s.nc' % (basin_name.lower(), ensemble_number)))
         else:
             new_file.write(line)
 
