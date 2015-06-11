@@ -34,9 +34,11 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, basi
         #check for qinit file
         past_date = (datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H") - \
                      datetime.timedelta(hours=12)).strftime("%Y%m%dt%H")
-        qinit_file = os.path.join(rapid_io_files_location,
+        qinit_file = os.path.join(rapid_io_files_location, watershed,
                                   'Qinit_file_%s_%s.csv' % (basin_name, past_date))
         init_flow = qinit_file and os.path.exists(qinit_file)
+        if not init_flow:
+            print "Error:", qinit_file, "not found"
 
     old_file = open(namelist_file)
     fh, abs_path = mkstemp()
