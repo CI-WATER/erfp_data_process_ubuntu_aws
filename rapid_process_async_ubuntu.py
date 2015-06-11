@@ -196,8 +196,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         subbasin_name_search = re.compile(r'Qout_(\w+)_\d+.nc')
 
     #prepare ECMWF files
-    time_start_prepare = datetime.datetime.utcnow()
-
     for ecmwf_folder in ecmwf_folders:
         ecmwf_forecasts = glob(os.path.join(ecmwf_folder,'*.runoff.netcdf'))
         #make the largest files first
@@ -226,7 +224,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             outflow_file_name_list = []
             for namelist_file in file_list:
                 basin_name = os.path.basename(namelist_file)[15:-4]
-                outflow_file_name = 'Qout_%s_%s.nc' % (basin_name, ensemble_number)
+                outflow_file_name = 'Qout_%s_%s.nc' % (basin_name.lower(), ensemble_number)
                 node_rapid_outflow_file = outflow_file_name
                 master_rapid_outflow_file = os.path.join(master_watershed_outflow_directory, outflow_file_name)
                 transfer_output_remaps += "%s = %s;" % (node_rapid_outflow_file, master_rapid_outflow_file)
@@ -291,8 +289,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     #remove tar.gz file
                     os.remove(output_tar_file)
 
-        time_finish_prepare = datetime.datetime.utcnow()
-
         #initialize flows for next run
         if initialize_flows:
             #create new init flow files
@@ -311,7 +307,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
                     forecast_directory = os.path.join(path_to_watershed_files, forecast_date_timestep)
                     for namelist_file in file_list:
-                        basin_name = os.path.basename(namelist_file)[15:-4]
+                        basin_name = os.path.basename(namelist_file)[15:-4].lower()
                         print "Initializing flows for", watershed, basin_name, "from", forecast_date_timestep
                         basin_files = find_current_rapid_output(forecast_directory, basin_name)
                         compute_initial_rapid_flows(basin_files, basin_name,
@@ -335,9 +331,6 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     #print info to user
     time_end = datetime.datetime.utcnow()
     print "Time Begin All: " + str(time_begin_all)
-    print "Time to Download: " + str(time_start_prepare - time_begin_all)
-    print "Time Start Prepare: " + str(time_start_prepare)
-    print "Time to Prepare Forecasts: " + str(time_finish_prepare-time_start_prepare)
     print "Time Finish All: " + str(time_end)
     print "TOTAL TIME: "  + str(time_end-time_begin_all)
 
