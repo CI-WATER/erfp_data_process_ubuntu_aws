@@ -62,6 +62,7 @@ $ pip install condorpy
 ```
 $ cd /path/to/your/scripts/
 $ git clone https://github.com/CI-WATER/erfp_data_process_ubuntu_aws.git
+$ cd erfp_data_process_ubuntu_aws
 $ git submodule init
 $ git submodule update
 ```
