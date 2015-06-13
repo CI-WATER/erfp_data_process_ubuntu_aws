@@ -366,7 +366,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     if z_max is not None:
         cf_nc.geospatial_vertical_max = z_max
 
-def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start_folder=None):
+def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, start_date, start_folder=None):
     """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
 
     Arguments:
@@ -389,16 +389,19 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
             log('No files to process', 'INFO')
             return
 
-        subbasin_name_search = re.compile(r'Qout_(\w+)_\d+.nc')
         for rapid_nc_filename in inputs:
-
             #make sure comid_lat_lon_z file exists before proceeding
-            subbasin_name = subbasin_name_search.search(os.path.basename(rapid_nc_filename)).group(1)
-            comid_lat_lon_z_lookup_filename = os.path.join(path,
-                                                           watershed_name,
-                                                           'comid_lat_lon_z_%s.csv' % subbasin_name)
+            rapid_input_directory = os.path.join(path, "%s-%s" % (watershed_name, subbasin_name))
 
-            if os.path.exists(comid_lat_lon_z_lookup_filename):
+            try:
+                comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
+                                                               [filename for filename in os.listdir(rapid_input_directory) \
+                                                                if re.search(r'comid_lat_lon_z.*?\.csv', filename, re.IGNORECASE)][0])
+            except IndexError:
+                comid_lat_lon_z_lookup_filename = ""
+                pass
+
+            if comid_lat_lon_z_lookup_filename:
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
                 log('New file %s' % cf_nc_filename, 'INFO')
