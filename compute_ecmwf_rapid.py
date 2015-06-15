@@ -135,11 +135,6 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
         print "Time to run RAPID:",(datetime.datetime.utcnow()-time_start_rapid)
 
 
-    #convert rapid output to be CF compliant
-    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
-                                               datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
-                                               node_path)
-
     #remove rapid link
     try:
         os.unlink(local_rapid_executable)
@@ -152,6 +147,11 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
         os.remove(rapid_namelist_file)
     except OSError:
         pass
+
+    #convert rapid output to be CF compliant
+    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
+                                               datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
+                                               node_path)
 
 def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location, init_flow):
     """
