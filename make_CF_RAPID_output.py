@@ -469,4 +469,9 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
 
         log('Files processed: ' + str(len(inputs)), 'INFO')
     except Exception, e:
+        #delete cf RAPID output
+        try:
+            os.remove(cf_nc_filename)
+        except OSError:
+            pass
         log('Error in main function %s' % e, 'ERROR')

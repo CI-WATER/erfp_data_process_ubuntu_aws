@@ -188,6 +188,11 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid
         time_stop_all = datetime.datetime.utcnow()
 
     except Exception as ex:
+        #remove inflow file
+        try:
+            os.remove(inflow_file_name)
+        except OSError:
+            pass
         print ex
         print "Skipping ECMWF-RAPID downscaling for: %s %s %s ..." % (watershed, forecast_date_timestep,
                                                                           ensemble_number)
