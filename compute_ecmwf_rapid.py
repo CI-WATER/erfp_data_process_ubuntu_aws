@@ -109,6 +109,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
 
     #loop through all the rapid_namelist files in directory
     file_list = glob(os.path.join(input_directory,'rapid_namelist_*.dat'))
+
     for namelist_file in file_list:
         time_start_rapid = datetime.datetime.utcnow()
 
@@ -125,6 +126,7 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
             os.remove(rapid_namelist_file)
         except OSError:
             pass
+
         #change link to new RAPID namelist file
         os.symlink(namelist_file,rapid_namelist_file)
         #run RAPID
@@ -148,10 +150,13 @@ def run_RAPID_single_watershed(forecast, watershed, rapid_executable_location, n
     except OSError:
         pass
 
-    #convert rapid output to be CF compliant
-    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
-                                               datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
-                                               node_path)
+    if not file_list:
+        print "ERROR: RAPID namelist file not found. Skipping..."
+    else:
+        #convert rapid output to be CF compliant
+        convert_ecmwf_rapid_output_to_cf_compliant(watershed,
+                                                   datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
+                                                   node_path)
 
 def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location, init_flow):
     """
