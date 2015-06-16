@@ -1,21 +1,125 @@
 import datetime
-import ftplib
 from glob import glob
 import os
 from shutil import rmtree
 import tarfile
+
+"""
+This section adapted from https://github.com/keepitsimple/pyFTPclient
+"""
+import threading
+import ftplib
+import socket
 import time
 
-def ftp_connect():
-    """
-    Connect to ftp site
-    """
-    ftp = ftplib.FTP('ftp.ecmwf.int')
-    ftp.login('safer','neo2008')
-    ftp.cwd('tcyc')
-    ftp.set_debuglevel(1)
-    return ftp
-    
+
+def setInterval(interval, times = -1):
+    # This will be the actual decorator,
+    # with fixed interval and times parameter
+    def outer_wrap(function):
+        # This will be the function to be
+        # called
+        def wrap(*args, **kwargs):
+            stop = threading.Event()
+
+            # This is another function to be executed
+            # in a different thread to simulate setInterval
+            def inner_wrap():
+                i = 0
+                while i != times and not stop.isSet():
+                    stop.wait(interval)
+                    function(*args, **kwargs)
+                    i += 1
+
+            t = threading.Timer(0, inner_wrap)
+            t.daemon = True
+            t.start()
+            return stop
+        return wrap
+    return outer_wrap
+
+
+class PyFTPclient:
+    def __init__(self, host, login, passwd, directory="", monitor_interval = 30):
+        self.host = host
+        self.login = login
+        self.passwd = passwd
+        self.directory = directory
+        self.monitor_interval = monitor_interval
+        self.ptr = None
+        self.max_attempts = 15
+        self.waiting = True
+        self.ftp = ftplib.FTP(self.host)
+
+    def connect(self):
+        """
+        Connect to ftp site
+        """
+        self.ftp = ftplib.FTP(self.host)
+        self.ftp.set_debuglevel(2)
+        self.ftp.set_pasv(True)
+        self.ftp.login(self.login, self.passwd)
+        if self.directory:
+            self.ftp.cwd(self.directory)
+        # optimize socket params for download task
+        self.ftp.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self.ftp.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 75)
+        self.ftp.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+
+    def download_file(self, dst_filename, local_filename = None):
+        res = ''
+        if local_filename is None:
+            local_filename = dst_filename
+
+        with open(local_filename, 'w+b') as f:
+            self.ptr = f.tell()
+
+            @setInterval(self.monitor_interval)
+            def monitor():
+                if not self.waiting:
+                    i = f.tell()
+                    if self.ptr < i:
+                        print "DEBUG: %d  -  %0.1f Kb/s" % (i, (i-self.ptr)/(1024*self.monitor_interval))
+                        self.ptr = i
+                    else:
+                        self.ftp.close()
+
+            self.connect()
+            self.ftp.voidcmd('TYPE I')
+            dst_filesize = self.ftp.size(dst_filename)
+
+            mon = monitor()
+            while dst_filesize > f.tell():
+                try:
+                    self.connect()
+                    self.waiting = False
+                    # retrieve file from position where we were disconnected
+                    res = self.ftp.retrbinary('RETR %s' % dst_filename, f.write) if f.tell() == 0 else \
+                              self.ftp.retrbinary('RETR %s' % dst_filename, f.write, rest=f.tell())
+
+                except:
+                    self.max_attempts -= 1
+                    if self.max_attempts == 0:
+                        mon.set()
+                        raise
+                    self.waiting = True
+                    print 'INFO: waiting 30 sec...'
+                    time.sleep(30)
+                    print 'INFO: reconnect'
+
+
+            mon.set() #stop monitor
+            self.ftp.close()
+
+            if not res.startswith('226'): #file successfully transferred
+                print 'ERROR: Downloaded file {0} is not full.'.format(dst_filename)
+                print res
+                return False
+            return True
+"""
+end pyFTPclient adapation section
+"""
+
 def remove_old_ftp_downloads(folder):
     """
     remove files/folders older than 1 days old
@@ -30,42 +134,6 @@ def remove_old_ftp_downloads(folder):
             else:
                 os.remove(path)
                 
-def download_ftp(dst_filename, local_path):
-    """
-    Download single file from the ftp site
-    """
-    file = open(local_path, 'wb')
-    print 'Reconnecting ...'
-    handle = ftp_connect()
-    handle.voidcmd('TYPE I')
-    dst_filesize = handle.size(dst_filename)
-    attempts_left = 15
-    while dst_filesize > file.tell():
-        try:
-            if file.tell() == 0:
-                res = handle.retrbinary('RETR %s' % dst_filename, file.write)
-            else:
-                # retrieve file from position where we were disconnected
-                handle.retrbinary('RETR %s' % dst_filename, file.write, rest=file.tell())
-        except Exception as ex:
-            print ex
-            if attempts_left == 0:
-                print "Max number of attempts reached. Download stopped."
-                handle.quit()
-                file.close()
-                os.remove(local_path)
-                return False
-            print 'Waiting 30 sec...'
-            time.sleep(30)
-            print 'Reconnecting ...'
-            handle.quit()
-            handle = ftp_connect()
-            print 'Connected. ' + str(attempts_left) + 'attempt(s) left.'
-        attempts_left -= 1
-    handle.quit()
-    file.close()
-    return True
-    
 def download_all_ftp(download_dir, file_match):
     """
     Remove downloads from before 2 days ago
@@ -73,11 +141,13 @@ def download_all_ftp(download_dir, file_match):
     Extract downloaded files
     """
     remove_old_ftp_downloads(download_dir)
-    ftp = ftp_connect()
+    #init FTPClient
+    ftp_client = PyFTPclient('ftp.ecmwf.int', 'safer', 'neo2008', 'tcyc')
+    ftp_client.connect()
     #open the file for writing in binary mode
     print 'Opening local file'
-    file_list = ftp.nlst(file_match)
-    ftp.quit()
+    file_list = ftp_client.ftp.nlst(file_match)
+    ftp_client.ftp.quit()
     all_files_downloaded = []
     for dst_filename in file_list:
         local_path = os.path.join(download_dir,dst_filename)
@@ -92,7 +162,7 @@ def download_all_ftp(download_dir, file_match):
             unzip_file = False
             if not os.path.exists(local_path) and not os.path.exists(local_dir):
                 print "Downloading from ftp site: " + dst_filename
-                unzip_file = download_ftp(dst_filename, local_path)
+                unzip_file = ftp_client.download_file(dst_filename, local_path)
             else:
                 print dst_filename + ' already exists. Skipping download.'
             #extract from tar.gz

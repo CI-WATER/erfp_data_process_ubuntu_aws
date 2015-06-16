@@ -177,9 +177,14 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     except OSError:
         pass
 
-    #get list of watersheds in rapid directory
-    rapid_input_directories = [d for d in os.listdir(os.path.join(rapid_io_files_location,'input')) \
-                               if os.path.isdir(os.path.join(rapid_io_files_location,'input', d))]
+    #get list of correclty formatted rapid input directories in rapid directory
+    rapid_input_directories = []
+    for directory in os.listdir(os.path.join(rapid_io_files_location,'input')):
+        if os.path.isdir(os.path.join(rapid_io_files_location,'input', directory)) \
+            and len(directory.split("-")) == 2:
+            rapid_input_directories.append(directory)
+        else:
+            print directory, "incorrectly formatted. Skipping ..."
 
     if download_ecmwf:
         #download all files for today
@@ -235,7 +240,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
             job.set('initialdir',condor_init_dir)
             job.set('arguments', '%s %s %s %s %s %s' % (forecast, watershed, subbasin, weight_table_file,
-                                                  rapid_executable_location, initialize_flows))
+                                                        rapid_executable_location, initialize_flows))
             job.set('transfer_output_remaps',"\"%s = %s\"" % (node_rapid_outflow_file, master_rapid_outflow_file))
             job.submit()
             job_list.append(job)
