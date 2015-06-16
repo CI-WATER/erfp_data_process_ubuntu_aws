@@ -149,7 +149,7 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
         print "No current forecasts found. Skipping ..."
 
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
-                            rapid_scripts_location, condor_log_directory, main_log_directory, data_store_url,
+                            condor_log_directory, main_log_directory, data_store_url,
                             data_store_api_key, app_instance_id, sync_rapid_input_with_ckan, download_ecmwf,
                             upload_output_to_ckan, initialize_flows):
     """
@@ -158,6 +158,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
     time_begin_all = datetime.datetime.utcnow()
     date_string = time_begin_all.strftime('%Y%m%d')
     #date_string = datetime.datetime(2015,2,3).strftime('%Y%m%d')
+    rapid_scripts_location = os.path.dirname(os.path.realpath(__file__))
 
     if sync_rapid_input_with_ckan and app_instance_id and data_store_url and data_store_api_key:
         #sync with data store
@@ -341,7 +342,6 @@ if __name__ == "__main__":
         rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
-        rapid_scripts_location='/home/cecsr/scripts/erfp_data_process_ubuntu_aws',
         condor_log_directory='/home/cecsr/condor/',
         main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',

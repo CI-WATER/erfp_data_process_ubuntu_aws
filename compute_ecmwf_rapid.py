@@ -150,15 +150,13 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
     except OSError:
         pass
 
-    if not os.path.exists(rapid_namelist_file):
-        print "ERROR: RAPID namelist file not found. Skipping..."
-    else:
-        #convert rapid output to be CF compliant
-        convert_ecmwf_rapid_output_to_cf_compliant(watershed,
-                                                   datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
-                                                   node_path)
+    #convert rapid output to be CF compliant
+    convert_ecmwf_rapid_output_to_cf_compliant(watershed,
+                                               datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
+                                               node_path)
 
-def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, in_weight_table, rapid_executable_location, init_flow):
+def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin, in_weight_table,
+                               rapid_executable_location, init_flow):
     """
     prepare all ECMWF files for rapid
     """
