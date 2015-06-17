@@ -212,15 +212,16 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         job_info_list = []
         for forecast_combo in itertools.product(ecmwf_forecasts, rapid_input_directories):
             forecast = forecast_combo[0]
-            input_folder_split = forecast_combo[1].split("-")
+            input_folder = forecast_combo[1]
+            input_folder_split = input_folder.split("-")
             watershed = input_folder_split[0]
             subbasin = input_folder_split[1]
             forecast_split = os.path.basename(forecast).split(".")
             forecast_date_timestep = ".".join(forecast_split[:2])
             ensemble_number = int(forecast_split[2])
-            master_watershed_input_directory = os.path.join(rapid_io_files_location, "input", input_folder_split)
+            master_watershed_input_directory = os.path.join(rapid_io_files_location, "input", input_folder)
             master_watershed_outflow_directory = os.path.join(rapid_io_files_location, 'output',
-                                                   input_folder_split, forecast_date_timestep)
+                                                              input_folder, forecast_date_timestep)
             try:
                 os.makedirs(master_watershed_outflow_directory)
             except OSError:
