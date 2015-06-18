@@ -162,7 +162,7 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin, in_weight_ta
     """
     node_path = os.path.dirname(os.path.realpath(__file__))
     forecast_basename = os.path.basename(ecmwf_forecast)
-    in_weight_table_node_location = os.path.join(node_path, watershed, in_weight_table)
+    in_weight_table_node_location = os.path.join(node_path, "%s-%s" % (watershed, subbasin), in_weight_table)
     forecast_split = forecast_basename.split(".")
     forecast_date_timestep = ".".join(forecast_split[:2])
     ensemble_number = int(forecast_split[2])
