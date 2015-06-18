@@ -160,7 +160,7 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
                                                datetime.datetime.strptime(forecast_date_timestep[:11], "%Y%m%d.%H"),
                                                node_path)
 
-def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin, in_weight_table,
+def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
                                rapid_executable_location, init_flow):
     """
     prepare all ECMWF files for rapid
@@ -208,4 +208,4 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin, in_weight_ta
     print "Total time to compute: %s" % (time_stop_all-time_start_all)
 
 if __name__ == "__main__":   
-    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+    process_upload_ECMWF_RAPID(sys.argv[1],sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
