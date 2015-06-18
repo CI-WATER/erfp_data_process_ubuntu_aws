@@ -162,24 +162,34 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin, in_weight_ta
     """
     node_path = os.path.dirname(os.path.realpath(__file__))
     forecast_basename = os.path.basename(ecmwf_forecast)
-    in_weight_table_node_location = os.path.join(node_path, "%s-%s" % (watershed, subbasin), in_weight_table)
     forecast_split = forecast_basename.split(".")
     forecast_date_timestep = ".".join(forecast_split[:2])
     ensemble_number = int(forecast_split[2])
+    rapid_input_directory = os.path.join(node_path, "%s-%s" % (watershed, subbasin))
     inflow_file_name = 'm3_riv_bas_%s.nc' % ensemble_number
+
+    #determine weight table from resolution
+    if ensemble_number == 52:
+        weight_table_file = case_insensitive_file_search(r'weight_high_res.csv',
+                                             rapid_input_directory)
+    else:
+        weight_table_file = case_insensitive_file_search(r'weight_low_res.csv',
+                                             rapid_input_directory)
 
     time_start_all = datetime.datetime.utcnow()
     #RUN CALCULATIONS
     #prepare ECMWF file for RAPID
     print "Running all ECMWF downscaling for watershed:", watershed, subbasin, \
         forecast_date_timestep, ensemble_number
+
     print "Converting ECMWF inflow"
     #optional argument ... time interval?
     RAPIDinflowECMWF_tool = CreateInflowFileFromECMWFRunoff()
-    RAPIDinflowECMWF_tool.execute(forecast_basename,
-        in_weight_table_node_location, inflow_file_name)
+    RAPIDinflowECMWF_tool.execute(forecast_basename, weight_table_file, inflow_file_name)
+
     time_finish_ecmwf = datetime.datetime.utcnow()
     print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
+
     run_RAPID_single_watershed(forecast_basename, watershed, subbasin,
                                rapid_executable_location, node_path, init_flow)
     #CLEAN UP

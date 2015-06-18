@@ -231,17 +231,12 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             node_rapid_outflow_file = outflow_file_name
             master_rapid_outflow_file = os.path.join(master_watershed_outflow_directory, outflow_file_name)
 
-            #determine weight table from resolution
-            weight_table_file = 'weight_low_res.csv'
-            if ensemble_number == 52:
-                weight_table_file = 'weight_high_res.csv'
-
             #create job to downscale forecasts for watershed
             job = CJob('job_%s_%s_%s' % (forecast_date_timestep, watershed, iteration), tmplt.vanilla_transfer_files)
             job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
             job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
             job.set('initialdir',condor_init_dir)
-            job.set('arguments', '%s %s %s %s %s %s' % (forecast, watershed, subbasin, weight_table_file,
+            job.set('arguments', '%s %s %s %s %s' % (forecast, watershed, subbasin,
                                                         rapid_executable_location, initialize_flows))
             job.set('transfer_output_remaps',"\"%s = %s\"" % (node_rapid_outflow_file, master_rapid_outflow_file))
             job.submit()
