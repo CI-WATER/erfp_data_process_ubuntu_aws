@@ -12,7 +12,7 @@ from erfp_data_process_ubuntu_aws.make_CF_RAPID_output import convert_ecmwf_rapi
 #------------------------------------------------------------------------------
 #functions
 #------------------------------------------------------------------------------
-def case_insensitive_file_search(pattern, directory):
+def case_insensitive_file_search(directory, pattern):
     """
     Looks for file with patter with case insensitive search
     """
@@ -76,22 +76,22 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, subb
             else:
                 new_file.write('Qinit_file         =\'\'\n')
         elif line.strip().startswith('rapid_connect_file'):
-            new_file.write('rapid_connect_file =\'%s\'\n' % case_insensitive_file_search(r'rapid_connect\.csv',
-                                                                                         rapid_input_directory))
+            new_file.write('rapid_connect_file =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
+                                                                                         r'rapid_connect\.csv'))
         elif line.strip().startswith('riv_bas_id_file'):
-            new_file.write('riv_bas_id_file    =\'%s\'\n' % case_insensitive_file_search(r'riv_bas_id.*?\.csv',
-                                                                                         rapid_input_directory))
+            new_file.write('riv_bas_id_file    =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
+                                                                                         r'riv_bas_id.*?\.csv'))
         elif line.strip().startswith('k_file'):
-            new_file.write('k_file             =\'%s\'\n' % case_insensitive_file_search(r'k\.csv',
-                                                                                         rapid_input_directory))
+            new_file.write('k_file             =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
+                                                                                         r'k\.csv'))
         elif line.strip().startswith('x_file'):
-            new_file.write('x_file             =\'%s\'\n' % case_insensitive_file_search(r'x\.csv',
-                                                                                         rapid_input_directory))
+            new_file.write('x_file             =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
+                                                                                         r'x\.csv'))
         elif line.strip().startswith('Qout_file'):
             new_file.write('Qout_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                          'Qout_%s_%s_%s.nc' % (watershed.lower(),
-                                                                                                subbasin.lower(),
-                                                                                                ensemble_number)))
+                                                                                               subbasin.lower(),
+                                                                                               ensemble_number)))
         else:
             new_file.write(line)
 
@@ -121,8 +121,8 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
 
     time_start_rapid = datetime.datetime.utcnow()
 
-    namelist_file = case_insensitive_file_search(r'rapid_namelist.*?\.dat',
-                                                 rapid_input_directory)
+    namelist_file = case_insensitive_file_search(rapid_input_directory,
+                                                 r'rapid_namelist.*?\.dat')
 
     #change the new RAPID namelist file
     print "Updating namelist file for:", watershed, subbasin, ensemble_number
@@ -175,11 +175,11 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
 
     #determine weight table from resolution
     if ensemble_number == 52:
-        weight_table_file = case_insensitive_file_search(r'weight_high_res.csv',
-                                             rapid_input_directory)
+        weight_table_file = case_insensitive_file_search(rapid_input_directory,
+                                                         r'weight_high_res.csv')
     else:
-        weight_table_file = case_insensitive_file_search(r'weight_low_res.csv',
-                                             rapid_input_directory)
+        weight_table_file = case_insensitive_file_search(rapid_input_directory,
+                                                         r'weight_low_res.csv')
 
     time_start_all = datetime.datetime.utcnow()
     #RUN CALCULATIONS
