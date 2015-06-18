@@ -85,14 +85,17 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
     if subset of list, add zero where there is no flow
     """
     #remove old init files for this basin
-    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_file_%s_%s_*.csv' % (watershed, subbasin)))
+    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_file_%s_%s_*.csv' % (watershed.lower(),
+                                                                                          subbasin.lower())))
     for past_init_flow_file in past_init_flow_files:
         try:
             os.remove(past_init_flow_file)
         except:
             pass
     current_forecast_date = datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H").strftime("%Y%m%dt%H")
-    init_file_location = os.path.join(input_directory,'Qinit_file_%s_%s_%s.csv' % (watershed, subbasin, current_forecast_date))
+    init_file_location = os.path.join(input_directory,'Qinit_file_%s_%s_%s.csv' % (watershed.lower(),
+                                                                                   subbasin.lower(),
+                                                                                   current_forecast_date))
     #check to see if exists and only perform operation once
     if prediction_files:
         #get list of COMIDS
@@ -236,7 +239,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
             job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
             job.set('initialdir',condor_init_dir)
-            job.set('arguments', '%s %s %s %s %s' % (forecast, watershed, subbasin,
+            job.set('arguments', '%s %s %s %s %s' % (forecast, watershed.lower(), subbasin.lower(),
                                                         rapid_executable_location, initialize_flows))
             job.set('transfer_output_remaps',"\"%s = %s\"" % (node_rapid_outflow_file, master_rapid_outflow_file))
             job.submit()
