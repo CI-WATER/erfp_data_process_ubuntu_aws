@@ -16,9 +16,12 @@ def case_insensitive_file_search(pattern, directory):
     """
     Looks for file with patter with case insensitive search
     """
-    return os.path.join(directory,
-                        [filename for filename in os.listdir(directory) \
-                         if re.search(pattern, filename, re.IGNORECASE)][0])
+    try:
+        return os.path.join(directory,
+                            [filename for filename in os.listdir(directory) \
+                             if re.search(pattern, filename, re.IGNORECASE)][0])
+    except IndexError:
+        raise IndexError("%s not found." % pattern)
 
 def update_namelist_file(namelist_file, rapid_io_files_location, watershed, subbasin,
                          ensemble_number, forecast_date_timestep, init_flow = False):
