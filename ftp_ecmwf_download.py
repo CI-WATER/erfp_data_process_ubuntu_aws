@@ -56,7 +56,7 @@ class PyFTPclient:
         Connect to ftp site
         """
         self.ftp = ftplib.FTP(self.host)
-        self.ftp.set_debuglevel(2)
+        self.ftp.set_debuglevel(1)
         self.ftp.set_pasv(True)
         self.ftp.login(self.login, self.passwd)
         if self.directory:
