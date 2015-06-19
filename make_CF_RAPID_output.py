@@ -331,21 +331,21 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
             log("COMID misssing in comid_lat_lon_z file", 'ERROR')
             raise
 
-        lat = float(row[1])
+        lat = float(lookup_table[index][1])
         lats[index] = lat
         if (lat_min) is None or lat < lat_min:
             lat_min = lat
         if (lat_max) is None or lat > lat_max:
             lat_max = lat
 
-        lon = float(row[2])
+        lon = float(lookup_table[index][2])
         lons[index] = lon
         if (lon_min) is None or lon < lon_min:
             lon_min = lon
         if (lon_max) is None or lon > lon_max:
             lon_max = lon
 
-        z = float(row[3])
+        z = float(lookup_table[index][3])
         zs[index] = z
         if (z_min) is None or z < z_min:
             z_min = z
