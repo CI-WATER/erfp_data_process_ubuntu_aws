@@ -85,14 +85,17 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
     if subset of list, add zero where there is no flow
     """
     #remove old init files for this basin
-    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_file_%s_%s_*.csv' % (watershed, subbasin)))
+    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_file_%s_%s_*.csv' % (watershed.lower(),
+                                                                                          subbasin.lower())))
     for past_init_flow_file in past_init_flow_files:
         try:
             os.remove(past_init_flow_file)
         except:
             pass
     current_forecast_date = datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H").strftime("%Y%m%dt%H")
-    init_file_location = os.path.join(input_directory,'Qinit_file_%s_%s_%s.csv' % (watershed, subbasin, current_forecast_date))
+    init_file_location = os.path.join(input_directory,'Qinit_file_%s_%s_%s.csv' % (watershed.lower(),
+                                                                                   subbasin.lower(),
+                                                                                   current_forecast_date))
     #check to see if exists and only perform operation once
     if prediction_files:
         #get list of COMIDS
@@ -212,15 +215,16 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
         job_info_list = []
         for forecast_combo in itertools.product(ecmwf_forecasts, rapid_input_directories):
             forecast = forecast_combo[0]
-            input_folder_split = forecast_combo[1].split("-")
+            input_folder = forecast_combo[1]
+            input_folder_split = input_folder.split("-")
             watershed = input_folder_split[0]
             subbasin = input_folder_split[1]
             forecast_split = os.path.basename(forecast).split(".")
             forecast_date_timestep = ".".join(forecast_split[:2])
             ensemble_number = int(forecast_split[2])
-            master_watershed_input_directory = os.path.join(rapid_io_files_location, "input", input_folder_split)
+            master_watershed_input_directory = os.path.join(rapid_io_files_location, "input", input_folder)
             master_watershed_outflow_directory = os.path.join(rapid_io_files_location, 'output',
-                                                   input_folder_split, forecast_date_timestep)
+                                                              input_folder, forecast_date_timestep)
             try:
                 os.makedirs(master_watershed_outflow_directory)
             except OSError:
@@ -230,17 +234,12 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
             node_rapid_outflow_file = outflow_file_name
             master_rapid_outflow_file = os.path.join(master_watershed_outflow_directory, outflow_file_name)
 
-            #determine weight table from resolution
-            weight_table_file = 'weight_low_res.csv'
-            if ensemble_number == 52:
-                weight_table_file = 'weight_high_res.csv'
-
             #create job to downscale forecasts for watershed
             job = CJob('job_%s_%s_%s' % (forecast_date_timestep, watershed, iteration), tmplt.vanilla_transfer_files)
             job.set('executable',os.path.join(rapid_scripts_location,'compute_ecmwf_rapid.py'))
             job.set('transfer_input_files', "%s, %s, %s" % (forecast, master_watershed_input_directory, rapid_scripts_location))
             job.set('initialdir',condor_init_dir)
-            job.set('arguments', '%s %s %s %s %s %s' % (forecast, watershed, subbasin, weight_table_file,
+            job.set('arguments', '%s %s %s %s %s' % (forecast, watershed.lower(), subbasin.lower(),
                                                         rapid_executable_location, initialize_flows))
             job.set('transfer_output_remaps',"\"%s = %s\"" % (node_rapid_outflow_file, master_rapid_outflow_file))
             job.submit()

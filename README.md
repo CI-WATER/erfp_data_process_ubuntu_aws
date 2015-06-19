@@ -12,7 +12,7 @@ Follow the instructions on page 10-14: http://rapid-hub.org/docs/RAPID_Azure.pdf
 
 Here is a script to download prereqs: http://rapid-hub.org/data/rapid_install_prereqs.sh.gz
 
-##Step 2: Install HTCondor
+##Step 2: Install HTCondor (if not using Amazon Web Services and StarCluster)
 ```
 apt-get install -y libvirt0 libdate-manip-perl vim
 wget http://ciwckan.chpc.utah.edu/dataset/be272798-f2a7-4b27-9dc8-4a131f0bb3f0/resource/86aa16c9-0575-44f7-a143-a050cd72f4c8/download/condor8.2.8312769ubuntu14.04amd64.deb
@@ -40,8 +40,7 @@ and run $ . /etc/init.d/condor restart as ROOT
 ###Install on Ubuntu:
 ```
 $ apt-get install python-dev zlib1g-dev libhdf5-serial-dev libnetcdf-dev 
-$ pip install numpy
-$ pip install netCDF4
+$ pip install numpy netCDF4
 ```
 ###Install on Redhat:
 *Note: this tool was desgined and tested in Ubuntu*
@@ -49,14 +48,11 @@ $ pip install netCDF4
 $ yum install netcdf4-python
 $ yum install hdf5-devel
 $ yum install netcdf-devel
-$ pip install numpy
-$ pip install netCDF4
+$ pip install numpy netCDF4
 ```
 ##Step 4: Install Other Python Libraries
 ```
-$ pip install requests_toolbelt
-$ pip install tethys_dataset_services
-$ pip install condorpy
+$ pip install requests_toolbelt tethys_dataset_services condorpy
 ```
 ##Step 5: Download the source code
 ```
@@ -84,7 +80,6 @@ if __name__ == "__main__":
         rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
-        rapid_scripts_location='/home/cecsr/scripts/erfp_data_process_ubuntu_aws',
         condor_log_directory='/home/cecsr/condor/',
         main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
@@ -92,7 +87,8 @@ if __name__ == "__main__":
         app_instance_id='53ab91374b7155b0a64f0efcd706854e',
         sync_rapid_input_with_ckan=False,
         download_ecmwf=True,
-        upload_output_to_ckan=True
+        upload_output_to_ckan=True,
+        initialize_flows=True
     )
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
@@ -105,19 +101,21 @@ $ chmod 554 rapid_process_async_ubuntu.py
 $ chmod 554 rapid_process.sh
 ```
 ##Step 9: Add RAPID files to the work/rapid/input directory
+Make sure the directory is in the format [watershed name]-[subbasin name]
+with lowercase letters, numbers, and underscores only. No spaces!
+
+
 Example:
 ```
 $ ls /rapid/input
-huc_region_1209
-$ ls -lh /rapid/input/huc_region_1209
--r--r--r-- 1 alan alan 163K Mar  6 10:01 k.csv
--r--r--r-- 1 alan alan 163K Mar  6 10:01 kfac.csv
--r--r--r-- 1 alan alan 340K Mar  6 19:22 rapid_connect.csv
--rw-r--r-- 1 alan alan 5.1K Mar 25 04:15 rapid_namelist_huc_4_1209.dat
--r--r--r-- 1 alan alan  99K Mar  9 07:52 riv_bas_id_huc_4_1209.csv
--r--r--r-- 1 alan alan 1.5M Mar  9 08:03 weight_high_res.csv
--r--r--r-- 1 alan alan 1.2M Mar  9 08:03 weight_low_res.csv
--r--r--r-- 1 alan alan  55K Mar  6 10:01 x.csv
+nfie_texas_gulf_region-huc_2_12
+$ ls /rapid/input/nfie_texas_gulf_region-huc_2_12
+k.csv
+rapid_connect.csv
+riv_bas_id.csv
+weight_high_res.csv
+weight_low_res.csv
+x.csv
 ```
 ##Step 10: Create CRON job to run the scripts twice daily
 See: http://askubuntu.com/questions/2368/how-do-i-set-up-a-cron-job
@@ -134,7 +132,7 @@ $ pip install python-crontab
 ```
 2) Modify location of script in *create_cron.py*
 ```python
-cron_command = '/home/sgeadmin/work/scripts/erfp_data_process_ubuntu_aws/rapid_process.sh' 
+cron_command = '/home/cecsr/scripts/erfp_data_process_ubuntu_aws/rapid_process.sh'
 ```
 3) Change execution times to suit your needs in *create_cron.py*
 ```python
