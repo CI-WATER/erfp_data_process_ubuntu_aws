@@ -42,7 +42,8 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
     """
     rapid_input_directory = os.path.join(rapid_io_files_location, "%s-%s" % (watershed, subbasin))
     watershed_namelist_file = os.path.join(rapid_io_files_location, 'rapid_namelist')
-    template_namelist_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),'rapid_namelist_template.dat')
+    template_namelist_file = case_insensitive_file_search(os.path.dirname(os.path.realpath(__file__)),
+                                                          'rapid_namelist_template\.dat')
 
     #get rapid connect info
     rapid_connect_file = case_insensitive_file_search(rapid_input_directory, r'rapid_connect\.csv')
