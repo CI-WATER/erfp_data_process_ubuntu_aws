@@ -36,13 +36,14 @@ def csv_to_list(csv_file, delimiter=','):
         return list(reader)
 
 def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
-                         ensemble_number, forecast_date_timestep, init_flow = False):
+                           ensemble_number, forecast_date_timestep, init_flow = False):
     """
     Generate RAPID namelist file with new input
     """
     rapid_input_directory = os.path.join(rapid_io_files_location, "%s-%s" % (watershed, subbasin))
     watershed_namelist_file = os.path.join(rapid_io_files_location, 'rapid_namelist')
-    template_namelist_file = case_insensitive_file_search(os.path.dirname(os.path.realpath(__file__)),
+    template_namelist_file = case_insensitive_file_search(rapid_io_files_location,
+                                                          'erfp_data_process_ubuntu_aws',
                                                           'rapid_namelist_template\.dat')
 
     #get rapid connect info
