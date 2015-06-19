@@ -95,16 +95,16 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
         elif line.strip().startswith('ZS_TauR'):
             new_file.write('ZS_TauR            =%s\n' % interval)
         elif line.strip().startswith('IS_riv_tot'):
-            new_file.write('IS_riv_tot         =\'%s\'\n' % is_riv_tot)
+            new_file.write('IS_riv_tot         =%s\n' % is_riv_tot)
         elif line.strip().startswith('rapid_connect_file'):
             new_file.write('rapid_connect_file =\'%s\'\n' % rapid_connect_file)
         elif line.strip().startswith('IS_max_up'):
-            new_file.write('IS_max_up          =\'%s\'\n' % is_max_up)
+            new_file.write('IS_max_up          =%s\n' % is_max_up)
         elif line.strip().startswith('Vlat_file'):
             new_file.write('Vlat_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
                                                                          'm3_riv_bas_%s.nc' % ensemble_number))
         elif line.strip().startswith('IS_riv_bas'):
-            new_file.write('IS_riv_bas          =\'%s\'\n' % is_riv_bas)
+            new_file.write('IS_riv_bas          =%s\n' % is_riv_bas)
         elif line.strip().startswith('riv_bas_id_file'):
             new_file.write('riv_bas_id_file    =\'%s\'\n' % riv_bas_id_file)
         elif line.strip().startswith('Qinit_file'):
