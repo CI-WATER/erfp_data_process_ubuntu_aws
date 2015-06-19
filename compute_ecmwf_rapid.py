@@ -199,21 +199,27 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
                                                          r'weight_low_res.csv')
 
     time_start_all = datetime.datetime.utcnow()
+
     #RUN CALCULATIONS
-    #prepare ECMWF file for RAPID
-    print "Running all ECMWF downscaling for watershed:", watershed, subbasin, \
-        forecast_date_timestep, ensemble_number
+    try:
+        #prepare ECMWF file for RAPID
+        print "Running all ECMWF downscaling for watershed:", watershed, subbasin, \
+            forecast_date_timestep, ensemble_number
 
-    print "Converting ECMWF inflow"
-    #optional argument ... time interval?
-    RAPIDinflowECMWF_tool = CreateInflowFileFromECMWFRunoff()
-    RAPIDinflowECMWF_tool.execute(forecast_basename, weight_table_file, inflow_file_name)
+        print "Converting ECMWF inflow"
+        #optional argument ... time interval?
+        RAPIDinflowECMWF_tool = CreateInflowFileFromECMWFRunoff()
+        RAPIDinflowECMWF_tool.execute(forecast_basename, weight_table_file, inflow_file_name)
 
-    time_finish_ecmwf = datetime.datetime.utcnow()
-    print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
+        time_finish_ecmwf = datetime.datetime.utcnow()
+        print "Time to convert ECMWF: %s" % (time_finish_ecmwf-time_start_all)
 
-    run_RAPID_single_watershed(forecast_basename, watershed, subbasin,
-                               rapid_executable_location, node_path, init_flow)
+        run_RAPID_single_watershed(forecast_basename, watershed, subbasin,
+                                   rapid_executable_location, node_path, init_flow)
+    except Exception as ex:
+        print ex
+        pass
+
     #CLEAN UP
     print "Cleaning up"
     #remove inflow file
