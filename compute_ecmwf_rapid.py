@@ -3,10 +3,8 @@ import csv
 import datetime
 import os
 import re
-from shutil import move
 from subprocess import Popen
 import sys
-from tempfile import mkstemp
 
 from erfp_data_process_ubuntu_aws.CreateInflowFileFromECMWFRunoff import CreateInflowFileFromECMWFRunoff
 from erfp_data_process_ubuntu_aws.make_CF_RAPID_output import convert_ecmwf_rapid_output_to_cf_compliant
@@ -80,7 +78,6 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
             print "Error:", qinit_file, "not found. Not initializing ..."
 
     old_file = open(template_namelist_file)
-    fh, abs_path = mkstemp()
     new_file = open(watershed_namelist_file,'w')
     for line in old_file:
         if line.strip().startswith('BS_opt_Qinit'):
@@ -128,7 +125,6 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
 
     #close temp file
     new_file.close()
-    os.close(fh)
     old_file.close()
 
 def run_RAPID_single_watershed(forecast, watershed, subbasin,
