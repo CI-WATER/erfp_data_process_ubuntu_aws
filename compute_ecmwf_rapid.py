@@ -208,6 +208,17 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
 
     time_start_all = datetime.datetime.utcnow()
 
+    def remove_inflow_file(inflow_file_name):
+        """
+        remove inflow file generated from ecmwf downscaling
+        """
+        print "Cleaning up"
+        #remove inflow file
+        try:
+            os.remove(inflow_file_name)
+        except OSError:
+            pass
+
     #RUN CALCULATIONS
     try:
         #prepare ECMWF file for RAPID
@@ -224,17 +235,13 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
 
         run_RAPID_single_watershed(forecast_basename, watershed, subbasin,
                                    rapid_executable_location, node_path, init_flow)
-    except Exception as ex:
-        print ex
-        pass
+    except Exception:
+        remove_inflow_file(inflow_file_name)
+        raise
 
     #CLEAN UP
-    print "Cleaning up"
-    #remove inflow file
-    try:
-        os.remove(inflow_file_name)
-    except OSError:
-        pass
+    remove_inflow_file(inflow_file_name)
+
     time_stop_all = datetime.datetime.utcnow()
     print "Total time to compute: %s" % (time_stop_all-time_start_all)
 
