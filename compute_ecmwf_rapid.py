@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import csv
 import datetime
 import os
 import re
@@ -23,12 +24,37 @@ def case_insensitive_file_search(directory, pattern):
     except IndexError:
         raise IndexError("%s not found." % pattern)
 
-def update_namelist_file(namelist_file, rapid_io_files_location, watershed, subbasin,
+def csv_to_list(csv_file, delimiter=','):
+    """
+    Reads in a CSV file and returns the contents as list,
+    where every row is stored as a sublist, and each element
+    in the sublist represents 1 cell in the table.
+
+    """
+    with open(csv_file, 'rb') as csv_con:
+        reader = csv.reader(csv_con, delimiter=delimiter)
+        return list(reader)
+
+def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
                          ensemble_number, forecast_date_timestep, init_flow = False):
     """
-    Update RAPID namelist file with new inflow file and output location
+    Generate RAPID namelist file with new input
     """
     rapid_input_directory = os.path.join(rapid_io_files_location, "%s-%s" % (watershed, subbasin))
+    watershed_namelist_file = os.path.join(rapid_io_files_location, 'rapid_namelist')
+    template_namelist_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),'rapid_namelist_template.dat')
+
+    #get rapid connect info
+    rapid_connect_file = case_insensitive_file_search(rapid_input_directory, r'rapid_connect\.csv')
+    rapid_connect_table = csv_to_list(rapid_connect_file)
+    is_riv_tot = len(rapid_connect_table)
+    is_max_up = max([int(row[2]) for row in rapid_connect_file])
+
+    #get riv_bas_id info
+    riv_bas_id_file = case_insensitive_file_search(rapid_input_directory, r'riv_bas_id.*?\.csv')
+    riv_bas_id_table = csv_to_list(riv_bas_id_file)
+    is_riv_bas = len(riv_bas_id_table)
+
 
     #default duration of 15 days
     duration = 15*24*60*60
@@ -52,35 +78,39 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, subb
         if not init_flow:
             print "Error:", qinit_file, "not found. Not initializing ..."
 
-    old_file = open(namelist_file)
+    old_file = open(template_namelist_file)
     fh, abs_path = mkstemp()
-    new_file = open(abs_path,'w')
+    new_file = open(watershed_namelist_file,'w')
     for line in old_file:
         if line.strip().startswith('BS_opt_Qinit'):
             if (init_flow):
                 new_file.write('BS_opt_Qinit       =.true.\n')
             else:
                 new_file.write('BS_opt_Qinit       =.false.\n')
-        elif line.strip().startswith('Vlat_file'):
-            new_file.write('Vlat_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
-                                                                         'm3_riv_bas_%s.nc' % ensemble_number))
         elif line.strip().startswith('ZS_TauM'):
             new_file.write('ZS_TauM            =%s\n' % duration)
         elif line.strip().startswith('ZS_dtM'):
             new_file.write('ZS_dtM             =%s\n' % 86400)
         elif line.strip().startswith('ZS_TauR'):
             new_file.write('ZS_TauR            =%s\n' % interval)
+        elif line.strip().startswith('IS_riv_tot'):
+            new_file.write('IS_riv_tot         =\'%s\'\n' % is_riv_tot)
+        elif line.strip().startswith('rapid_connect_file'):
+            new_file.write('rapid_connect_file =\'%s\'\n' % rapid_connect_file)
+        elif line.strip().startswith('IS_max_up'):
+            new_file.write('IS_max_up          =\'%s\'\n' % is_max_up)
+        elif line.strip().startswith('Vlat_file'):
+            new_file.write('Vlat_file          =\'%s\'\n' % os.path.join(rapid_io_files_location,
+                                                                         'm3_riv_bas_%s.nc' % ensemble_number))
+        elif line.strip().startswith('IS_riv_bas'):
+            new_file.write('IS_riv_bas          =\'%s\'\n' % is_riv_bas)
+        elif line.strip().startswith('riv_bas_id_file'):
+            new_file.write('riv_bas_id_file    =\'%s\'\n' % riv_bas_id_file)
         elif line.strip().startswith('Qinit_file'):
             if (init_flow):
                 new_file.write('Qinit_file         =\'%s\'\n' % qinit_file)
             else:
                 new_file.write('Qinit_file         =\'\'\n')
-        elif line.strip().startswith('rapid_connect_file'):
-            new_file.write('rapid_connect_file =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
-                                                                                         r'rapid_connect\.csv'))
-        elif line.strip().startswith('riv_bas_id_file'):
-            new_file.write('riv_bas_id_file    =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
-                                                                                         r'riv_bas_id.*?\.csv'))
         elif line.strip().startswith('k_file'):
             new_file.write('k_file             =\'%s\'\n' % case_insensitive_file_search(rapid_input_directory,
                                                                                          r'k\.csv'))
@@ -99,10 +129,6 @@ def update_namelist_file(namelist_file, rapid_io_files_location, watershed, subb
     new_file.close()
     os.close(fh)
     old_file.close()
-    #Remove original file
-    os.remove(namelist_file)
-    #Move new file
-    move(abs_path, namelist_file)
 
 def run_RAPID_single_watershed(forecast, watershed, subbasin,
                                rapid_executable_location, node_path, init_flow):
@@ -112,7 +138,6 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
     forecast_split = os.path.basename(forecast).split(".")
     ensemble_number = int(forecast_split[2])
     forecast_date_timestep = ".".join(forecast_split[:2])
-    rapid_input_directory = os.path.join(node_path, "%s-%s" % (watershed, subbasin))
     rapid_namelist_file = os.path.join(node_path,'rapid_namelist')
     local_rapid_executable = os.path.join(node_path,'rapid')
 
@@ -121,18 +146,10 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
 
     time_start_rapid = datetime.datetime.utcnow()
 
-    namelist_file = case_insensitive_file_search(rapid_input_directory,
-                                                 r'rapid_namelist.*?\.dat')
-
     #change the new RAPID namelist file
     print "Updating namelist file for:", watershed, subbasin, ensemble_number
-    update_namelist_file(namelist_file, node_path,
-                         watershed, subbasin,
-                         ensemble_number, forecast_date_timestep,
-                         init_flow)
-
-    #change link to new RAPID namelist file
-    os.symlink(namelist_file, rapid_namelist_file)
+    generate_namelist_file(node_path, watershed, subbasin, ensemble_number,
+                           forecast_date_timestep, init_flow)
 
     #run RAPID
     print "Running RAPID for:", subbasin, "Ensemble:", ensemble_number
@@ -148,9 +165,8 @@ def run_RAPID_single_watershed(forecast, watershed, subbasin,
     except OSError:
         pass
 
-    #remove namelist link
+    #remove namelist file
     try:
-        os.unlink(rapid_namelist_file)
         os.remove(rapid_namelist_file)
     except OSError:
         pass
