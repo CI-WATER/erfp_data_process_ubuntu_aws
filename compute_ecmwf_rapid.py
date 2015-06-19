@@ -49,7 +49,7 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
     rapid_connect_file = case_insensitive_file_search(rapid_input_directory, r'rapid_connect\.csv')
     rapid_connect_table = csv_to_list(rapid_connect_file)
     is_riv_tot = len(rapid_connect_table)
-    is_max_up = max([int(float(row[2])) for row in rapid_connect_file])
+    is_max_up = max([int(float(row[2])) for row in rapid_connect_table])
 
     #get riv_bas_id info
     riv_bas_id_file = case_insensitive_file_search(rapid_input_directory, r'riv_bas_id.*?\.csv')
