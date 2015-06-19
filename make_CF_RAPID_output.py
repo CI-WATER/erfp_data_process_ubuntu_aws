@@ -70,6 +70,17 @@ from netCDF4 import Dataset
 import numpy as np
 
 
+def csv_to_list(csv_file, delimiter=','):
+    """
+    Reads in a CSV file and returns the contents as list,
+    where every row is stored as a sublist, and each element
+    in the sublist represents 1 cell in the table.
+
+    """
+    with open(csv_file, 'rb') as csv_con:
+        reader = csv.reader(csv_con, delimiter=delimiter)
+        return list(reader)
+
 def get_this_file():
     """Returns full filename of this script.
 
@@ -292,12 +303,15 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
         Columns must be in that order and these must be the first four columns.
     """
 
+    #get list of COMIDS
+    lookup_table = csv_to_list(lookup_filename)
+    lookup_comids = np.array([int(float(row[0])) for row in lookup_table[1:]])
+
     # Get relevant arrays while we update them
-    comids = cf_nc.variables[id_var_name][:]
+    nc_comids = cf_nc.variables[id_var_name][:]
     lats = cf_nc.variables['lat'][:]
     lons = cf_nc.variables['lon'][:]
     zs = cf_nc.variables['z'][:]
-    id_count = len(comids)
 
     lat_min = None
     lat_max = None
@@ -306,51 +320,42 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     z_min = None
     z_max = None
 
+    if len(lookup_comids) < len(nc_comids):
+        log("COMID misssing in comid_lat_lon_z file", 'ERROR')
+
     # Process each row in the lookup table
-    with open(lookup_filename, 'rb') as csvfile:
-        at_header = True
-        reader = csv.reader(csvfile)
-        index = -1
-        for row in reader:
-            if at_header:
-                at_header = False
-            elif index < id_count:
-                comids[index] = int(float(row[0]))
+    for nc_comid in nc_comids:
+        try:
+            index = np.where(lookup_comids=nc_comid)[0][0] + 1
+        except Exception:
+            log("COMID misssing in comid_lat_lon_z file", 'ERROR')
+            raise
 
-                lat = float(row[1])
-                lats[index] = lat
-                if (lat_min) is None or lat < lat_min:
-                    lat_min = lat
-                if (lat_max) is None or lat > lat_max:
-                    lat_max = lat
+        lat = float(row[1])
+        lats[index] = lat
+        if (lat_min) is None or lat < lat_min:
+            lat_min = lat
+        if (lat_max) is None or lat > lat_max:
+            lat_max = lat
 
-                lon = float(row[2])
-                lons[index] = lon
-                if (lon_min) is None or lon < lon_min:
-                    lon_min = lon
-                if (lon_max) is None or lon > lon_max:
-                    lon_max = lon
+        lon = float(row[2])
+        lons[index] = lon
+        if (lon_min) is None or lon < lon_min:
+            lon_min = lon
+        if (lon_max) is None or lon > lon_max:
+            lon_max = lon
 
-                z = float(row[3])
-                zs[index] = z
-                if (z_min) is None or z < z_min:
-                    z_min = z
-                if (z_max) is None or z > z_max:
-                    z_max = z
-
-            index = index + 1
+        z = float(row[3])
+        zs[index] = z
+        if (z_min) is None or z < z_min:
+            z_min = z
+        if (z_max) is None or z > z_max:
+            z_max = z
 
     # Overwrite netCDF variable values
-    cf_nc.variables[id_var_name][:] = comids
     cf_nc.variables['lat'][:] = lats
     cf_nc.variables['lon'][:] = lons
     cf_nc.variables['z'][:] = zs
-
-    if index != id_count:
-        msg = ('Number of features from model (' + str(id_count) + ') ' +
-               'does not match number of Ids in lat-lon-z lookup (' +
-               str(index) + ')')
-        log(msg, 'ERROR')
 
     # Update metadata
     if lat_min is not None:
@@ -366,7 +371,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     if z_max is not None:
         cf_nc.geospatial_vertical_max = z_max
 
-def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start_folder=None):
+def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, start_date, start_folder=None):
     """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
 
     Arguments:
@@ -389,16 +394,19 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, start_date, start
             log('No files to process', 'INFO')
             return
 
-        subbasin_name_search = re.compile(r'Qout_(\w+)_\d+.nc')
         for rapid_nc_filename in inputs:
-
             #make sure comid_lat_lon_z file exists before proceeding
-            subbasin_name = subbasin_name_search.search(os.path.basename(rapid_nc_filename)).group(1)
-            comid_lat_lon_z_lookup_filename = os.path.join(path,
-                                                           watershed_name,
-                                                           'comid_lat_lon_z_%s.csv' % subbasin_name)
+            rapid_input_directory = os.path.join(path, "%s-%s" % (watershed_name, subbasin_name))
 
-            if os.path.exists(comid_lat_lon_z_lookup_filename):
+            try:
+                comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
+                                                               [filename for filename in os.listdir(rapid_input_directory) \
+                                                                if re.search(r'comid_lat_lon_z.*?\.csv', filename, re.IGNORECASE)][0])
+            except IndexError:
+                comid_lat_lon_z_lookup_filename = ""
+                pass
+
+            if comid_lat_lon_z_lookup_filename:
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
                 log('New file %s' % cf_nc_filename, 'INFO')
