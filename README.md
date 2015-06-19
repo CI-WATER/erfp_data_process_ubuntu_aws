@@ -109,7 +109,7 @@ Example:
 ```
 $ ls /rapid/input
 nfie_texas_gulf_region-huc_2_12
-$ ls -l /rapid/input/nfie_texas_gulf_region-huc_2_12
+$ ls /rapid/input/nfie_texas_gulf_region-huc_2_12
 k.csv
 rapid_connect.csv
 riv_bas_id.csv
