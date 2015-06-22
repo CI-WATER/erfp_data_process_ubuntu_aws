@@ -17,10 +17,11 @@
               Version 1.2, 02/03/2015, bug fixing - calculate inflow assuming that
                 ECMWF runoff data is cumulative instead of incremental through time
 -------------------------------------------------------------------------------'''
-import os
+import csv
 import netCDF4 as NET
 import numpy as NUM
-import csv
+import os
+import re
 
 class CreateInflowFileFromECMWFRunoff(object):
     def __init__(self):
@@ -235,3 +236,12 @@ class CreateInflowFileFromECMWFRunoff(object):
 
 
         return
+
+if __name__ == "__main__":
+    calc = CreateInflowFileFromECMWFRunoff()
+    in_nc_directory='/Users/Alan/Documents/RESEARCH/RAPID/ECMWF/Runoff.20141031.00.netcdf/'
+    nc_files = sorted([os.path.join(in_nc_directory, filename) for filename in os.listdir(in_nc_directory) \
+                  if re.search(r'.*\.52\.205\.runoff\.grib\.runoff\.netcdf', filename, re.IGNORECASE)])
+    calc.execute(in_nc=nc_files[0],
+                 in_weight_table='/Users/Alan/Documents/RESEARCH/RAPID/input/nfie_texas_gulf_region/rapid_updated/weight_high_res.csv',
+                 out_nc='/Users/Alan/Documents/RESEARCH/RAPID/input/nfie_texas_gulf_region/rapid_updated/m3_high_res_2.nc')
