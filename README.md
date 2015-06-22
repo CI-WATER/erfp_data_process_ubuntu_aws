@@ -93,6 +93,15 @@ if __name__ == "__main__":
 ```
 Go into *rapid_process.sh* and change make sure the path locations and variables are correct for your instance.
 
+Go into *ftp_ecmwf_download.py* and add password and login information:
+```python
+    #init FTPClient
+    ftp_client = PyFTPclient(host='ftp.ecmwf.int',
+                             login='',
+                             passwd='',
+                             directory='tcyc')
+```
+
 ##Step 8: Make sure permissions are correct for these files and any directories the script will use
 
 Example:

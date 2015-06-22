@@ -142,7 +142,10 @@ def download_all_ftp(download_dir, file_match):
     """
     remove_old_ftp_downloads(download_dir)
     #init FTPClient
-    ftp_client = PyFTPclient('ftp.ecmwf.int', 'safer', 'neo2008', 'tcyc')
+    ftp_client = PyFTPclient(host='ftp.ecmwf.int',
+                             login='',
+                             passwd='',
+                             directory='tcyc')
     ftp_client.connect()
     #open the file for writing in binary mode
     print 'Opening local file'
