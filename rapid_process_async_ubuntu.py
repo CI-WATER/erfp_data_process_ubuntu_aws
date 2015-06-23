@@ -85,7 +85,7 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
     if subset of list, add zero where there is no flow
     """
     #remove old init files for this basin
-    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_file_%s_%s_*.csv' % (watershed.lower(),
+    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_*.csv' % (watershed.lower(),
                                                                                           subbasin.lower())))
     for past_init_flow_file in past_init_flow_files:
         try:
@@ -93,9 +93,7 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
         except:
             pass
     current_forecast_date = datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H").strftime("%Y%m%dt%H")
-    init_file_location = os.path.join(input_directory,'Qinit_file_%s_%s_%s.csv' % (watershed.lower(),
-                                                                                   subbasin.lower(),
-                                                                                   current_forecast_date))
+    init_file_location = os.path.join(input_directory,'Qinit_%s.csv' % current_forecast_date)
     #check to see if exists and only perform operation once
     if prediction_files:
         #get list of COMIDS

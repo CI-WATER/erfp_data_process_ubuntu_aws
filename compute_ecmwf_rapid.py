@@ -72,8 +72,7 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
         #check for qinit file
         past_date = (datetime.datetime.strptime(forecast_date_timestep[:11],"%Y%m%d.%H") - \
                      datetime.timedelta(hours=12)).strftime("%Y%m%dt%H")
-        qinit_file = os.path.join(rapid_input_directory,
-                                  'Qinit_file_%s_%s_%s.csv' % (watershed.lower(), subbasin.lower(), past_date))
+        qinit_file = os.path.join(rapid_input_directory, 'Qinit_%s.csv' % past_date)
         init_flow = qinit_file and os.path.exists(qinit_file)
         if not init_flow:
             print "Error:", qinit_file, "not found. Not initializing ..."
