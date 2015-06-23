@@ -323,7 +323,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     try:
         lookup_indices = np.where(np.in1d(lookup_comids, nc_comids))[0] + 1
     except Exception:
-        log("COMID(s) misssing in comid_lat_lon_z file", 'ERROR')
+        log("COMID(s) misssing in comid_lat_lon_z file", 'WARNING')
         raise
 
     # Process each row in the lookup table
