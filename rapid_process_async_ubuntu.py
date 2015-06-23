@@ -77,7 +77,7 @@ def get_comids_in_netcdf_file(reach_id_list, prediction_file):
 
     return netcdf_reach_indices_list, com_ids[netcdf_reach_indices_list]
 
-def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_directory, forecast_date_timestep):
+def compute_initial_rapid_flows(prediction_files, input_directory, forecast_date_timestep):
     """
     Gets mean of all 52 ensembles 12-hrs in future and prints to csv as initial flow
     Qinit_file (BS_opt_Qinit)
@@ -85,8 +85,7 @@ def compute_initial_rapid_flows(prediction_files, watershed, subbasin, input_dir
     if subset of list, add zero where there is no flow
     """
     #remove old init files for this basin
-    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_*.csv' % (watershed.lower(),
-                                                                                          subbasin.lower())))
+    past_init_flow_files = glob(os.path.join(input_directory, 'Qinit_*.csv'))
     for past_init_flow_file in past_init_flow_files:
         try:
             os.remove(past_init_flow_file)
@@ -307,8 +306,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     subbasin = input_folder_split[1]
                     print "Initializing flows for", watershed, subbasin, "from", forecast_date_timestep
                     basin_files = find_current_rapid_output(forecast_directory, watershed, subbasin)
-                    compute_initial_rapid_flows(basin_files, watershed, subbasin,
-                                                input_directory, forecast_date_timestep)
+                    compute_initial_rapid_flows(basin_files, input_directory, forecast_date_timestep)
 
 
         if upload_output_to_ckan and data_store_url and data_store_api_key:
