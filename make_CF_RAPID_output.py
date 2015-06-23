@@ -321,29 +321,29 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     z_max = None
 
     try:
-        indices = np.where(np.in1d(lookup_comids,nc_comids))[0] + 1
+        lookup_indices = np.where(np.in1d(lookup_comids, nc_comids))[0] + 1
     except Exception:
-        log("COMID misssing in comid_lat_lon_z file", 'ERROR')
+        log("COMID(s) misssing in comid_lat_lon_z file", 'ERROR')
         raise
 
     # Process each row in the lookup table
-    for index in indices:
-        lat = float(lookup_table[index][1])
-        lats[index] = lat
+    for nc_index, lookup_index in enumerate(lookup_indices):
+        lat = float(lookup_table[lookup_index][1])
+        lats[nc_index] = lat
         if (lat_min) is None or lat < lat_min:
             lat_min = lat
         if (lat_max) is None or lat > lat_max:
             lat_max = lat
 
-        lon = float(lookup_table[index][2])
-        lons[index] = lon
+        lon = float(lookup_table[lookup_index][2])
+        lons[nc_index] = lon
         if (lon_min) is None or lon < lon_min:
             lon_min = lon
         if (lon_max) is None or lon > lon_max:
             lon_max = lon
 
-        z = float(lookup_table[index][3])
-        zs[index] = z
+        z = float(lookup_table[lookup_index][3])
+        zs[nc_index] = z
         if (z_min) is None or z < z_min:
             z_min = z
         if (z_max) is None or z > z_max:
