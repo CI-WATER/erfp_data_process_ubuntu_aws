@@ -39,7 +39,7 @@ def generate_namelist_file(rapid_io_files_location, watershed, subbasin,
     """
     Generate RAPID namelist file with new input
     """
-    rapid_input_directory = os.path.join(rapid_io_files_location, "%s-%s" % (watershed, subbasin))
+    rapid_input_directory = os.path.join(rapid_io_files_location, "rapid_input")
     watershed_namelist_file = os.path.join(rapid_io_files_location, 'rapid_namelist')
     template_namelist_file = case_insensitive_file_search(os.path.join(rapid_io_files_location, 'erfp_data_process_ubuntu_aws'),
                                                           'rapid_namelist_template\.dat')
@@ -194,7 +194,12 @@ def process_upload_ECMWF_RAPID(ecmwf_forecast, watershed, subbasin,
     forecast_split = forecast_basename.split(".")
     forecast_date_timestep = ".".join(forecast_split[:2])
     ensemble_number = int(forecast_split[2])
-    rapid_input_directory = os.path.join(node_path, "%s-%s" % (watershed, subbasin))
+    old_rapid_input_directory = os.path.join(node_path, "%s-%s" % (watershed, subbasin))
+    rapid_input_directory = os.path.join(node_path, "rapid_input")
+
+    #rename rapid input directory
+    os.rename(old_rapid_input_directory, rapid_input_directory)
+
     inflow_file_name = 'm3_riv_bas_%s.nc' % ensemble_number
 
     #determine weight table from resolution
