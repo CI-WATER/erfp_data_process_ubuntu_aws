@@ -320,11 +320,10 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     z_min = None
     z_max = None
 
-    try:
-        lookup_indices = np.where(np.in1d(lookup_comids, nc_comids))[0] + 1
-    except Exception:
+    lookup_indices = np.where(np.in1d(lookup_comids, nc_comids))[0] + 1
+
+    if len(lookup_indices) != len(nc_comids):
         log("COMID(s) misssing in comid_lat_lon_z file", 'ERROR')
-        raise
 
     # Process each row in the lookup table
     for nc_index, lookup_index in enumerate(lookup_indices):
@@ -368,7 +367,7 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     if z_max is not None:
         cf_nc.geospatial_vertical_max = z_max
 
-def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, start_date, start_folder=None):
+def convert_ecmwf_rapid_output_to_cf_compliant(start_date, start_folder=None):
     """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
 
     Arguments:
@@ -381,7 +380,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, st
         else:
             path = get_this_path()
 
-        time_step = 21600 #time step in seconds
+        time_step = 6*3600 #time step in seconds
         output_id_dim_name = 'COMID' #name of ID dimension in output file, typically COMID or FEATUREID
         output_flow_var_name = 'Qout' #name of streamflow variable in output file, typically Qout or m3_riv
 
@@ -393,7 +392,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, st
 
         for rapid_nc_filename in inputs:
             #make sure comid_lat_lon_z file exists before proceeding
-            rapid_input_directory = os.path.join(path, "%s-%s" % (watershed_name, subbasin_name))
+            rapid_input_directory = os.path.join(path, "input")
 
             try:
                 comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
@@ -436,6 +435,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, st
                 # Populate comid, lat, lon, z
                 log('writing comid lat lon z', 'DEBUG')
                 lookup_start = datetime.now()
+                cf_nc.variables[output_id_dim_name][:] = rapid_nc.variables[input_id_dim_name][:]
                 write_comid_lat_lon_z(cf_nc, comid_lat_lon_z_lookup_filename, output_id_dim_name)
                 duration = str((datetime.now() - lookup_start).total_seconds())
                 log('Lookup Duration (s): ' + duration, 'DEBUG')
@@ -455,11 +455,10 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, st
                 q_var.comment = ('lat, lon, and z values taken at midpoint of river ' +
                                  'reach feature')
                 log('Copying streamflow values', 'DEBUG')
-                q_var[:] = np.transpose(rapid_nc.variables[input_flow_var_name][:])
+                q_var[:] = rapid_nc.variables[input_flow_var_name][:].transpose()
                 rapid_nc.close()
 
                 cf_nc.close()
-
                 #delete original RAPID output
                 try:
                     os.remove(rapid_nc_filename)
@@ -470,7 +469,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(watershed_name, subbasin_name, st
                 shutil.move(cf_nc_filename, rapid_nc_filename)
                 log('Time to process %s' % (datetime.utcnow()-time_start_conversion), 'INFO')
             else:
-                log("No comid_lat_lon_z found for subbasin %s. Skipping ..." % subbasin_name, "INFO")
+                log("No comid_lat_lon_z file found. Skipping ...", "INFO")
 
         log('Files processed: ' + str(len(inputs)), 'INFO')
     except Exception, e:
