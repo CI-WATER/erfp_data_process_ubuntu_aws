@@ -367,7 +367,12 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     if z_max is not None:
         cf_nc.geospatial_vertical_max = z_max
 
-def convert_ecmwf_rapid_output_to_cf_compliant(start_date, start_folder=None):
+def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
+                                               start_folder=None,
+                                               time_step=6*3600, #time step in seconds
+                                               output_id_dim_name='COMID', #name of ID dimension in output file, typically COMID or FEATUREID
+                                               output_flow_var_name='Qout' #name of streamflow variable in output file, typically Qout or m3_riv
+                                               ):
     """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
 
     Arguments:
@@ -380,10 +385,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date, start_folder=None):
         else:
             path = get_this_path()
 
-        time_step = 6*3600 #time step in seconds
-        output_id_dim_name = 'COMID' #name of ID dimension in output file, typically COMID or FEATUREID
-        output_flow_var_name = 'Qout' #name of streamflow variable in output file, typically Qout or m3_riv
-
+        cf_nc_filename = None
         # Get files to process
         inputs = glob(os.path.join(path,"Qout*.nc"))
         if len(inputs) == 0:
@@ -392,7 +394,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date, start_folder=None):
 
         for rapid_nc_filename in inputs:
             #make sure comid_lat_lon_z file exists before proceeding
-            rapid_input_directory = os.path.join(path, "input")
+            rapid_input_directory = os.path.join(path, "rapid_input")
 
             try:
                 comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
@@ -478,4 +480,5 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date, start_folder=None):
             os.remove(cf_nc_filename)
         except OSError:
             pass
-        log('Error in main function %s' % e, 'ERROR')
+        log('Error in main function %s' % e, 'WARNING')
+        raise
