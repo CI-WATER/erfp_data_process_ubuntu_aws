@@ -373,38 +373,34 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
                                                output_id_dim_name='COMID', #name of ID dimension in output file, typically COMID or FEATUREID
                                                output_flow_var_name='Qout' #name of streamflow variable in output file, typically Qout or m3_riv
                                                ):
-    """Copies data from RAPID netCDF output to a CF-compliant netCDF file.
-
-    Arguments:
-        logger -- logger object, if logging is desired
+    """
+    Copies data from RAPID netCDF output to a CF-compliant netCDF file.
     """
 
+    if start_folder:
+        path = start_folder
+    else:
+        path = get_this_path()
+
+    # Get files to process
+    inputs = glob(os.path.join(path,"Qout*.nc"))
+    if len(inputs) == 0:
+        log('No files to process', 'INFO')
+        return
+
+    rapid_input_directory = os.path.join(path, "rapid_input")
+    #make sure comid_lat_lon_z file exists before proceeding
     try:
-        if start_folder:
-            path = start_folder
-        else:
-            path = get_this_path()
+        comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
+                                                       [filename for filename in os.listdir(rapid_input_directory) \
+                                                        if re.search(r'comid_lat_lon_z.*?\.csv', filename, re.IGNORECASE)][0])
+    except IndexError:
+        comid_lat_lon_z_lookup_filename = ""
+        pass
 
-        cf_nc_filename = None
-        # Get files to process
-        inputs = glob(os.path.join(path,"Qout*.nc"))
-        if len(inputs) == 0:
-            log('No files to process', 'INFO')
-            return
-
+    if comid_lat_lon_z_lookup_filename:
         for rapid_nc_filename in inputs:
-            #make sure comid_lat_lon_z file exists before proceeding
-            rapid_input_directory = os.path.join(path, "rapid_input")
-
             try:
-                comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
-                                                               [filename for filename in os.listdir(rapid_input_directory) \
-                                                                if re.search(r'comid_lat_lon_z.*?\.csv', filename, re.IGNORECASE)][0])
-            except IndexError:
-                comid_lat_lon_z_lookup_filename = ""
-                pass
-
-            if comid_lat_lon_z_lookup_filename:
                 cf_nc_filename = '%s_CF.nc' % os.path.splitext(rapid_nc_filename)[0]
                 log('Processing %s' % rapid_nc_filename, 'INFO')
                 log('New file %s' % cf_nc_filename, 'INFO')
@@ -470,15 +466,15 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
                 #replace original with nc compliant file
                 shutil.move(cf_nc_filename, rapid_nc_filename)
                 log('Time to process %s' % (datetime.utcnow()-time_start_conversion), 'INFO')
-            else:
-                log("No comid_lat_lon_z file found. Skipping ...", "INFO")
+            except Exception, e:
+                #delete cf RAPID output
+                try:
+                    os.remove(cf_nc_filename)
+                except OSError:
+                    pass
+                log('Error in main function %s' % e, 'WARNING')
+                raise
+    else:
+        log("No comid_lat_lon_z file found. Skipping ...", "INFO")
 
-        log('Files processed: ' + str(len(inputs)), 'INFO')
-    except Exception, e:
-        #delete cf RAPID output
-        try:
-            os.remove(cf_nc_filename)
-        except OSError:
-            pass
-        log('Error in main function %s' % e, 'WARNING')
-        raise
+    log('Files processed: ' + str(len(inputs)), 'INFO')
