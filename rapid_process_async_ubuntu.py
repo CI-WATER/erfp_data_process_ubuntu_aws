@@ -308,12 +308,22 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     if initialize_flows:
                         print "Initializing flows for", watershed, subbasin, "from", forecast_date_timestep
                         basin_files = find_current_rapid_output(forecast_directory, watershed, subbasin)
-                        compute_initial_rapid_flows(basin_files, input_directory, forecast_date_timestep)
-                    if generate_warning_points:
+                        try:
+                            compute_initial_rapid_flows(basin_files, input_directory, forecast_date_timestep)
+                        except Exception, ex:
+                            print ex
+                            pass
+
+                    era_interim_watershed_directory = os.path.join(era_interim_data_location, "%s-%s" % (watershed, subbasin))
+                    if generate_warning_points and os.path.exists(era_interim_watershed_directory):
                         print "Generating Warning Points for", watershed, subbasin, "from", forecast_date_timestep
-                        era_interim_files = glob(os.path.join(era_interim_data_location, "%s-%s" % (watershed, subbasin), "*.nc"))
+                        era_interim_files = glob(os.path.join(era_interim_watershed_directory, "*.nc"))
                         if era_interim_files:
-                            generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
+                            try:
+                                generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
+                            except Exception, ex:
+                                print ex
+                                pass
                         else:
                             print "No ERA Interim File Found. Skipping ..."
 
