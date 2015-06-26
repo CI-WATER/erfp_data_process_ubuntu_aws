@@ -320,13 +320,14 @@ def write_comid_lat_lon_z(cf_nc, lookup_filename, id_var_name):
     z_min = None
     z_max = None
 
-    lookup_indices = np.where(np.in1d(lookup_comids, nc_comids))[0] + 1
-
-    if len(lookup_indices) != len(nc_comids):
-        log("COMID(s) misssing in comid_lat_lon_z file", 'ERROR')
-
     # Process each row in the lookup table
-    for nc_index, lookup_index in enumerate(lookup_indices):
+    for nc_index, nc_comid in enumerate(nc_comids):
+        try:
+            lookup_index = np.where(lookup_comids == nc_comid)[0][0] + 1
+        except Exception:
+            log('COMID %s misssing in comid_lat_lon_z file' % nc_comid,
+                'ERROR')
+
         lat = float(lookup_table[lookup_index][1])
         lats[nc_index] = lat
         if (lat_min) is None or lat < lat_min:
@@ -388,7 +389,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
         log('No files to process', 'INFO')
         return
 
-    rapid_input_directory = os.path.join(path, "rapid_input")
+    rapid_input_directory = os.path.join(path, "")
     #make sure comid_lat_lon_z file exists before proceeding
     try:
         comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
@@ -478,3 +479,8 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
         log("No comid_lat_lon_z file found. Skipping ...", "INFO")
 
     log('Files processed: ' + str(len(inputs)), 'INFO')
+
+if __name__ == "__main__":
+    convert_ecmwf_rapid_output_to_cf_compliant(start_date=datetime(1980,1,1),
+                                               start_folder='/Users/Alan/Documents/RESEARCH/RAPID/input/nfie_texas_gulf_region/rapid_updated'
+                                               )
