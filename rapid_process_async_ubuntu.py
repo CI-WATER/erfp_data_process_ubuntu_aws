@@ -14,6 +14,7 @@ import tarfile
 
 #local imports
 import ftp_ecmwf_download
+from generate_warning_points import generate_warning_points
 from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
                                                   RAPIDInputDatasetManager)
 
@@ -149,9 +150,9 @@ def compute_initial_rapid_flows(prediction_files, input_directory, forecast_date
         print "No current forecasts found. Skipping ..."
 
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
-                            condor_log_directory, main_log_directory, data_store_url,
+                            era_interim_data_location, condor_log_directory, main_log_directory, data_store_url,
                             data_store_api_key, app_instance_id, sync_rapid_input_with_ckan, download_ecmwf,
-                            upload_output_to_ckan, initialize_flows):
+                            upload_output_to_ckan, initialize_flows, generate_warning_points):
     """
     This it the main process
     """
@@ -286,8 +287,8 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                 os.remove(output_tar_file)
 
         #initialize flows for next run
-        if initialize_flows:
-            #create new init flow files
+        if initialize_flows or generate_warning_points:
+            #create new init flow files/generate warning point files
             for rapid_input_directory in rapid_input_directories:
                 input_directory = os.path.join(rapid_io_files_location, 'input', rapid_input_directory)
                 path_to_watershed_files = os.path.join(rapid_io_files_location, 'output', rapid_input_directory)
@@ -304,9 +305,17 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                     input_folder_split = rapid_input_directory.split("-")
                     watershed = input_folder_split[0]
                     subbasin = input_folder_split[1]
-                    print "Initializing flows for", watershed, subbasin, "from", forecast_date_timestep
-                    basin_files = find_current_rapid_output(forecast_directory, watershed, subbasin)
-                    compute_initial_rapid_flows(basin_files, input_directory, forecast_date_timestep)
+                    if initialize_flows:
+                        print "Initializing flows for", watershed, subbasin, "from", forecast_date_timestep
+                        basin_files = find_current_rapid_output(forecast_directory, watershed, subbasin)
+                        compute_initial_rapid_flows(basin_files, input_directory, forecast_date_timestep)
+                    if generate_warning_points:
+                        print "Generating Warning Points for", watershed, subbasin, "from", forecast_date_timestep
+                        era_interim_files = glob(os.path.join(era_interim_data_location, "%s-%s" % (watershed, subbasin), "*.nc"))
+                        if era_interim_files:
+                            generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
+                        else:
+                            print "No ERA Interim File Found. Skipping ..."
 
 
         if upload_output_to_ckan and data_store_url and data_store_api_key:
@@ -337,6 +346,7 @@ if __name__ == "__main__":
         rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
+        era_interim_data_location="/home/cecsr/era_interim",
         condor_log_directory='/home/cecsr/condor/',
         main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
@@ -345,5 +355,6 @@ if __name__ == "__main__":
         sync_rapid_input_with_ckan=False,
         download_ecmwf=True,
         upload_output_to_ckan=True,
-        initialize_flows=True
+        initialize_flows=True,
+        generate_warning_points=True,
     )
