@@ -314,7 +314,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                             print ex
                             pass
 
-                    era_interim_watershed_directory = os.path.join(era_interim_data_location, "%s-%s" % (watershed, subbasin))
+                    era_interim_watershed_directory = os.path.join(era_interim_data_location, rapid_input_directory)
                     if create_warning_points and os.path.exists(era_interim_watershed_directory):
                         print "Generating Warning Points for", watershed, subbasin, "from", forecast_date_timestep
                         era_interim_files = glob(os.path.join(era_interim_watershed_directory, "*.nc"))
@@ -322,12 +322,15 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                             try:
                                 generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
                                 if upload_output_to_ckan and data_store_url and data_store_api_key:
+                                    data_manager.initialize_run_ecmwf(watershed, subbasin, forecast_date_timestep)
                                     data_manager.zip_upload_warning_points_in_directory(forecast_directory)
                             except Exception, ex:
                                 print ex
                                 pass
                         else:
-                            print "No ERA Interim File Found. Skipping ..."
+                            print "No ERA Interim file found. Skipping ..."
+                    else:
+                        print "No ERA Interim directory found for", rapid_input_directory, ". Skipping warning point generation..."
 
 
         if upload_output_to_ckan and data_store_url and data_store_api_key:
