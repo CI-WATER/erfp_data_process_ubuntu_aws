@@ -152,7 +152,7 @@ def compute_initial_rapid_flows(prediction_files, input_directory, forecast_date
 def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, ecmwf_forecast_location,
                             era_interim_data_location, condor_log_directory, main_log_directory, data_store_url,
                             data_store_api_key, app_instance_id, sync_rapid_input_with_ckan, download_ecmwf,
-                            upload_output_to_ckan, initialize_flows, generate_warning_points):
+                            upload_output_to_ckan, initialize_flows, create_warning_points):
     """
     This it the main process
     """
@@ -287,7 +287,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                 os.remove(output_tar_file)
 
         #initialize flows for next run
-        if initialize_flows or generate_warning_points:
+        if initialize_flows or create_warning_points:
             #create new init flow files/generate warning point files
             for rapid_input_directory in rapid_input_directories:
                 input_directory = os.path.join(rapid_io_files_location, 'input', rapid_input_directory)
@@ -315,7 +315,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                             pass
 
                     era_interim_watershed_directory = os.path.join(era_interim_data_location, "%s-%s" % (watershed, subbasin))
-                    if generate_warning_points and os.path.exists(era_interim_watershed_directory):
+                    if create_warning_points and os.path.exists(era_interim_watershed_directory):
                         print "Generating Warning Points for", watershed, subbasin, "from", forecast_date_timestep
                         era_interim_files = glob(os.path.join(era_interim_watershed_directory, "*.nc"))
                         if era_interim_files:
@@ -368,5 +368,5 @@ if __name__ == "__main__":
         download_ecmwf=True,
         upload_output_to_ckan=True,
         initialize_flows=True,
-        generate_warning_points=True,
+        create_warning_points=True,
     )

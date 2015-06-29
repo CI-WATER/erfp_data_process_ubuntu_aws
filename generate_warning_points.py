@@ -5,18 +5,6 @@ import numpy as np
 import os
 from json import dumps
 
-def get_comids_in_lookup_comid_list(search_reach_id_list, lookup_reach_id_list):
-    """
-    Gets the subset comid_index_list, reordered_comid_list from the netcdf file
-    """
-    try:
-        #get where comids are in search_list
-        search_reach_indices_list = np.where(np.in1d(search_reach_id_list, lookup_reach_id_list))[0]
-    except Exception as ex:
-        print ex
-
-    return search_reach_indices_list, search_reach_id_list[search_reach_indices_list]
-
 def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_directory):
     """
     Create warning points from era interim data and ECMWD prediction data
@@ -38,8 +26,6 @@ def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_direc
     era_interim_comids = data_nc.variables['COMID'][:]
     data_nc.close()
 
-    print "Finding COMID indices ..."
-    prediction_comid_index_list, reordered_prediction_comid_list = get_comids_in_lookup_comid_list(prediction_comids, era_interim_comids)
     print "Extracting Data ..."
     #get information from datasets
     reach_prediciton_array_first_half = np.zeros((comid_list_length,len(prediction_files),40))
@@ -52,9 +38,9 @@ def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_direc
             data_nc = NET.Dataset(prediction_file, mode="r")
             qout_dimensions = data_nc.variables['Qout'].dimensions
             if qout_dimensions[0].lower() == 'time' and qout_dimensions[1].lower() == 'comid':
-                data_values_2d_array = data_nc.variables['Qout'][:,prediction_comid_index_list].transpose()
+                data_values_2d_array = data_nc.variables['Qout'][:].transpose()
             elif qout_dimensions[0].lower() == 'comid' and qout_dimensions[1].lower() == 'time':
-                data_values_2d_array = data_nc.variables['Qout'][prediction_comid_index_list,:]
+                data_values_2d_array = data_nc.variables['Qout'][:]
             else:
                 print "Invalid ECMWF forecast file", prediction_file
                 data_nc.close()
@@ -66,7 +52,7 @@ def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_direc
             #pass
         #add data to main arrays and order in order of interim comids
         if len(data_values_2d_array) > 0:
-            for comid_index, comid in enumerate(era_interim_comids):
+            for comid_index, comid in enumerate(prediction_comids):
                 reach_prediciton_array_first_half[comid_index][file_index] = data_values_2d_array[comid_index][:40]
                 if(ensemble_index < 52):
                     reach_prediciton_array_second_half[comid_index][file_index] = data_values_2d_array[comid_index][40:]
@@ -85,7 +71,9 @@ def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_direc
     return_25_points = []
     return_10_points = []
     return_2_points = []
-    for era_interim_comid_index, era_interim_comid in enumerate(era_interim_comids):
+    for prediction_comid_index, prediction_comid in enumerate(prediction_comids):
+        #get interim comid index
+        era_interim_comid_index = np.where(era_interim_comids==prediction_comid)[0][0]
         #perform analysis on datasets
         all_data_first = reach_prediciton_array_first_half[era_interim_comid_index]
         all_data_second = reach_prediciton_array_second_half[era_interim_comid_index]
