@@ -75,8 +75,8 @@ def generate_warning_points(ecmwf_prediction_folder, era_interim_file, out_direc
         #get interim comid index
         era_interim_comid_index = np.where(era_interim_comids==prediction_comid)[0][0]
         #perform analysis on datasets
-        all_data_first = reach_prediciton_array_first_half[era_interim_comid_index]
-        all_data_second = reach_prediciton_array_second_half[era_interim_comid_index]
+        all_data_first = reach_prediciton_array_first_half[prediction_comid_index]
+        all_data_second = reach_prediciton_array_second_half[prediction_comid_index]
 
         return_period_25 = era_interim_data_2d_array[era_interim_comid_index, num_years-25]
         return_period_10 = era_interim_data_2d_array[era_interim_comid_index, num_years-10]
