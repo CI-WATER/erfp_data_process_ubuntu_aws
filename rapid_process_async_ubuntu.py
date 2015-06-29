@@ -321,6 +321,8 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                         if era_interim_files:
                             try:
                                 generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
+                                if upload_output_to_ckan and data_store_url and data_store_api_key:
+                                    data_manager.zip_upload_warning_points_in_directory(forecast_directory)
                             except Exception, ex:
                                 print ex
                                 pass
