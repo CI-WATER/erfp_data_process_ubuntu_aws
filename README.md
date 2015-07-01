@@ -18,7 +18,7 @@ apt-get install -y libvirt0 libdate-manip-perl vim
 wget http://ciwckan.chpc.utah.edu/dataset/be272798-f2a7-4b27-9dc8-4a131f0bb3f0/resource/86aa16c9-0575-44f7-a143-a050cd72f4c8/download/condor8.2.8312769ubuntu14.04amd64.deb
 dpkg -i condor8.2.8312769ubuntu14.04amd64.deb
 #if master node uncomment CONDOR_HOST and comment out CONDOR_HOST and DAEMON_LIST lines
-#echo CONDOR_HOST = \$\(IP_ADDRESS\)
+#echo CONDOR_HOST = \$\(IP_ADDRESS\) >> /etc/condor/condor_config.local
 echo CONDOR_HOST = 10.8.123.71 >> /etc/condor/condor_config.local
 echo DAEMON_LIST = MASTER, SCHEDD, STARTD >> /etc/condor/condor_config.local
 echo ALLOW_ADMINISTRATOR = \$\(CONDOR_HOST\), 10.8.123.* >> /etc/condor/condor_config.local
@@ -36,11 +36,14 @@ echo WANT_VACATE = False >> /etc/condor/condor_config.local
 ```
 NOTE: if you forgot to change lines for master node, change CONDOR_HOST = $(IP_ADDRESS)
 and run $ . /etc/init.d/condor restart as ROOT
+
 ##Step 3: Install netCDF4-python
 ###Install on Ubuntu:
 ```
-$ apt-get install python-dev zlib1g-dev libhdf5-serial-dev libnetcdf-dev 
+$ apt-get install python-dev zlib1g-dev libhdf5-serial-dev libnetcdf-dev
+$ sudo su
 $ pip install numpy netCDF4
+$ exit
 ```
 ###Install on Redhat:
 *Note: this tool was desgined and tested in Ubuntu*
@@ -52,8 +55,10 @@ $ pip install numpy netCDF4
 ```
 ##Step 4: Install Other Python Libraries
 ```
+$ sudo apt-get install libssl-dev libffi-dev
+$ sudo su
 $ pip install requests_toolbelt tethys_dataset_services condorpy
-```
+$ exit
 ##Step 5: Download the source code
 ```
 $ cd /path/to/your/scripts/
