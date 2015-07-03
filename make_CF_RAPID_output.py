@@ -389,7 +389,7 @@ def convert_ecmwf_rapid_output_to_cf_compliant(start_date,
         log('No files to process', 'INFO')
         return
 
-    rapid_input_directory = os.path.join(path, "")
+    rapid_input_directory = os.path.join(path, "rapid_input")
     #make sure comid_lat_lon_z file exists before proceeding
     try:
         comid_lat_lon_z_lookup_filename = os.path.join(rapid_input_directory,
