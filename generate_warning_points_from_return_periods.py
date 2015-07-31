@@ -1,6 +1,5 @@
-#!/usr/bin/python
 #generate_warning_points_from_return_periods.py
-import netCDF4 as NET
+import netCDF4 as nc
 import numpy as np
 import os
 from json import dumps
@@ -17,7 +16,7 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
                               if not os.path.isdir(os.path.join(ecmwf_prediction_folder, f))]
 
     #get the comids in ECMWF files
-    data_nc = NET.Dataset(prediction_files[0], mode="r")
+    data_nc = nc.Dataset(prediction_files[0], mode="r")
     prediction_comids = data_nc.variables['COMID'][:]
     comid_list_length = len(prediction_comids)
     data_nc.close()
@@ -31,7 +30,7 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
         try:
             ensemble_index = int(os.path.basename(prediction_file)[:-3].split("_")[-1])
             #Get hydrograph data from ECMWF Ensemble
-            data_nc = NET.Dataset(prediction_file, mode="r")
+            data_nc = nc.Dataset(prediction_file, mode="r")
             qout_dimensions = data_nc.variables['Qout'].dimensions
             if qout_dimensions[0].lower() == 'time' and qout_dimensions[1].lower() == 'comid':
                 data_values_2d_array = data_nc.variables['Qout'][:].transpose()
@@ -52,9 +51,9 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
                     reach_prediciton_array_second_half[comid_index][file_index] = data_values_2d_array[comid_index][40:]
 
     print "Extracting Return Period Data ..."
-    return_period_nc = NET.Dataset(return_period_file, mode="r")
+    return_period_nc = nc.Dataset(return_period_file, mode="r")
     return_period_comids = return_period_nc.variables['COMID'][:]
-    return_period_25_data = return_period_nc.variables['return_period_25'][:]
+    return_period_20_data = return_period_nc.variables['return_period_20'][:]
     return_period_10_data = return_period_nc.variables['return_period_10'][:]
     return_period_2_data = return_period_nc.variables['return_period_2'][:]
     return_period_lat_data = return_period_nc.variables['lat'][:]
@@ -62,7 +61,7 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
     data_nc.close()
 
     print "Analyzing Forecast Data with Return Periods ..."
-    return_25_points = []
+    return_20_points = []
     return_10_points = []
     return_2_points = []
     for prediction_comid_index, prediction_comid in enumerate(prediction_comids):
@@ -72,7 +71,7 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
         all_data_first = reach_prediciton_array_first_half[prediction_comid_index]
         all_data_second = reach_prediciton_array_second_half[prediction_comid_index]
 
-        return_period_25 = return_period_25_data[return_period_comid_index]
+        return_period_20 = return_period_20_data[return_period_comid_index]
         return_period_10 = return_period_10_data[return_period_comid_index]
         return_period_2 = return_period_2_data[return_period_comid_index]
         #get mean
@@ -81,8 +80,8 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
         mean_series = np.concatenate([mean_data_first,mean_data_second])
         mean_peak = np.amax(mean_series)
         if mean_peak > threshold:
-            if mean_peak > return_period_25:
-                return_25_points.append({ "lat" : return_period_lat_data[return_period_comid_index],
+            if mean_peak > return_period_20:
+                return_20_points.append({ "lat" : return_period_lat_data[return_period_comid_index],
                                           "lon" : return_period_lon_data[return_period_comid_index],
                                           "size": 1,
                                           })
@@ -110,8 +109,8 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
         mean_plus_std_series = mean_series + std_dev
         mean_plus_std_peak = min(np.amax(mean_plus_std_series), max_peak)
         if mean_plus_std_peak > threshold:
-            if mean_plus_std_peak > return_period_25:
-                return_25_points.append({ "lat" : return_period_lat_data[return_period_comid_index],
+            if mean_plus_std_peak > return_period_20:
+                return_20_points.append({ "lat" : return_period_lat_data[return_period_comid_index],
                                           "lon" : return_period_lon_data[return_period_comid_index],
                                           "size": 0,
                                           })
@@ -127,8 +126,8 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
                                           })
 
     print "Writing Output ..."
-    with open(os.path.join(out_directory, "return_25_points.txt"), 'wb') as outfile:
-        outfile.write(dumps(return_25_points))
+    with open(os.path.join(out_directory, "return_20_points.txt"), 'wb') as outfile:
+        outfile.write(dumps(return_20_points))
     with open(os.path.join(out_directory, "return_10_points.txt"), 'wb') as outfile:
         outfile.write(dumps(return_10_points))
     with open(os.path.join(out_directory, "return_2_points.txt"), 'wb') as outfile:
@@ -136,7 +135,9 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
 
 
 if __name__ == "__main__":
-    ecmwf_prediction_folder = '../../../ecmwf_rapid_output/nfie_great_basin_region/huc_2_16/20150728.0/'
-    return_period_file = 'return_periods.nc'
+    region_dir = 'nfie_south_atlantic_gulf_region/huc_2_3'
+    date_dir = '20150730.0'
+    ecmwf_prediction_folder = os.path.join('../ecmwf_rapid_output/', region_dir, date_dir)
+    return_period_file = os.path.join(region_dir, 'return_periods.nc')
     generate_warning_points(ecmwf_prediction_folder, return_period_file, out_directory=ecmwf_prediction_folder)
 
