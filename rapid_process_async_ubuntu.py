@@ -361,7 +361,7 @@ if __name__ == "__main__":
         rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
-        era_interim_data_location="/home/cecsr/era_interim",
+        era_interim_data_location="/home/cecsr/return_periods",
         condor_log_directory='/home/cecsr/condor/',
         main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
