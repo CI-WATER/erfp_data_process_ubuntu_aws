@@ -14,7 +14,7 @@ import tarfile
 
 #local imports
 import ftp_ecmwf_download
-from generate_warning_points import generate_warning_points
+from generate_warning_points_from_return_periods import generate_warning_points
 from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
                                                   RAPIDInputDatasetManager)
 
