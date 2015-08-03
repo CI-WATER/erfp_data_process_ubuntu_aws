@@ -137,7 +137,7 @@ def generate_warning_points(ecmwf_prediction_folder, return_period_file, out_dir
 if __name__ == "__main__":
     region_dir = 'nfie_south_atlantic_gulf_region/huc_2_3'
     date_dir = '20150730.0'
-    ecmwf_prediction_folder = os.path.join('../ecmwf_rapid_output/', region_dir, date_dir)
-    return_period_file = os.path.join(region_dir, 'return_periods.nc')
+    ecmwf_prediction_folder = os.path.join('../../rapid/output/', region_dir, date_dir)
+    return_period_file = os.path.join('../../return_periods/', region_dir, 'return_periods.nc')
     generate_warning_points(ecmwf_prediction_folder, return_period_file, out_directory=ecmwf_prediction_folder)
 

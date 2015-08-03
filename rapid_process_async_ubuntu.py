@@ -14,7 +14,7 @@ import tarfile
 
 #local imports
 import ftp_ecmwf_download
-from generate_warning_points import generate_warning_points
+from generate_warning_points_from_return_periods import generate_warning_points
 from sfpt_dataset_manager.dataset_manager import (ECMWFRAPIDDatasetManager,
                                                   RAPIDInputDatasetManager)
 
@@ -320,7 +320,7 @@ def run_ecmwf_rapid_process(rapid_executable_location, rapid_io_files_location, 
                         era_interim_files = glob(os.path.join(era_interim_watershed_directory, "*.nc"))
                         if era_interim_files:
                             try:
-                                generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory)
+                                generate_warning_points(forecast_directory, era_interim_files[0], forecast_directory, threshold=10)
                                 if upload_output_to_ckan and data_store_url and data_store_api_key:
                                     data_manager.initialize_run_ecmwf(watershed, subbasin, forecast_date_timestep)
                                     data_manager.zip_upload_warning_points_in_directory(forecast_directory)
@@ -361,7 +361,7 @@ if __name__ == "__main__":
         rapid_executable_location='/home/cecsr/work/rapid/src/rapid',
         rapid_io_files_location='/home/cecsr/rapid',
         ecmwf_forecast_location ="/home/cecsr/ecmwf",
-        era_interim_data_location="/home/cecsr/era_interim",
+        era_interim_data_location="/home/cecsr/return_periods",
         condor_log_directory='/home/cecsr/condor/',
         main_log_directory='/home/cecsr/logs/',
         data_store_url='http://ciwckan.chpc.utah.edu',
